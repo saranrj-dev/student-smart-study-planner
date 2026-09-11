@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Timetable</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<nav>
+    <h2>🎓 Study Planner</h2>
+    <a href="/dashboard">Dashboard</a>
+    <a href="/logout">Logout</a>
+</nav>
+
+<div class="main">
+
+    <h1>🕒 Daily Timetable</h1>
+
+    <form method="POST">
+
+        <input type="text"
+               name="subject"
+               placeholder="Subject"
+               required>
+
+        <input type="date"
+               name="study_date"
+               required>
+
+        <input type="time"
+               name="start_time"
+               required>
+
+        <input type="time"
+               name="end_time"
+               required>
+
+        <input type="text"
+               name="topic"
+               placeholder="Study topic"
+               required>
+
+        <button type="submit">Add Study Plan</button>
+
+    </form>
+
+
+    <h2>Study Schedule</h2>
+
+    <table>
+
+        <tr>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Subject</th>
+            <th>Topic</th>
+        </tr>
+
+        {% for item in timetable %}
+
+        <tr>
+
+            <td>{{ item["study_date"] }}</td>
+
+            <td>
+                {{ item["start_time"] }}
+                -
+                {{ item["end_time"] }}
+            </td>
+
+            <td>{{ item["subject"] }}</td>
+
+            <td>{{ item["topic"] }}</td>
+
+        </tr>
+
+        {% else %}
+
+        <tr>
+            <td colspan="4">No study plan added.</td>
+        </tr>
+
+        {% endfor %}
+
+    </table>
+
+</div>
+
+</body>
+</html>
