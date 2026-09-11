@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Alerts</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<nav>
+    <h2>🎓 Study Planner</h2>
+    <div>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/subjects">Subjects</a>
+        <a href="/assignments">Assignments</a>
+        <a href="/exams">Exams</a>
+        <a href="/timetable">Timetable</a>
+        <a href="/progress">Progress</a>
+        <a href="/alerts">🔔 Alerts</a>
+        <a href="/logout">Logout</a>
+    </div>
+</nav>
+
+<div class="main">
+
+    <h1>🔔 Alerts & Reminders</h1>
+
+    <h2>📝 Assignment Alerts</h2>
+
+    {% for item in assignments %}
+    <div class="alert-box">
+        📚 <strong>{{ item["subject"] }}</strong>
+        <br>
+        📝 {{ item["title"] }}
+        <br>
+        📅 Due: {{ item["due_date"] }}
+        <br><br>
+
+        {% if item["days_left"] < 0 %}
+            <span class="danger">⚠️ Overdue</span>
+        {% elif item["days_left"] == 0 %}
+            <span class="danger">🔥 Due Today</span>
+        {% else %}
+            <span class="danger">⏰ Due Tomorrow</span>
+        {% endif %}
+    </div>
+    {% else %}
+        <p>✅ No urgent assignments.</p>
+    {% endfor %}
+
+
+    <h2>📅 Exam Alerts</h2>
+
+    {% for exam in exams %}
+    <div class="alert-box">
+        📚 <strong>{{ exam["subject"] }}</strong>
+        <br>
+        📅 Exam Date: {{ exam["exam_date"] }}
+        <br><br>
+
+        {% if exam["days_left"] == 0 %}
+            <span class="danger">🔥 Exam Today!</span>
+        {% elif exam["days_left"] == 1 %}
+            <span class="danger">⚠️ Exam Tomorrow!</span>
+        {% else %}
+            <span class="danger">
+                ⏳ {{ exam["days_left"] }} days left
+            </span>
+        {% endif %}
+    </div>
+    {% else %}
+        <p>✅ No exam alerts.</p>
+    {% endfor %}
+
+
+    <h2>📖 Today's Study Plan</h2>
+
+    {% for item in timetable %}
+    <div class="alert-box">
+        📚 <strong>{{ item["subject"] }}</strong>
+        <br>
+        📖 Topic: {{ item["topic"] }}
+        <br>
+        ⏰ {{ item["start_time"] }} - {{ item["end_time"] }}
+    </div>
+    {% else %}
+        <p>📭 No study plan for today.</p>
+    {% endfor %}
+
+</div>
+
+</body>
+</html>
