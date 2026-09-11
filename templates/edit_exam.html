@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Exam</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<nav>
+    <h2>🎓 Study Planner</h2>
+
+    <div>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/subjects">Subjects</a>
+        <a href="/assignments">Assignments</a>
+        <a href="/exams">Exams</a>
+        <a href="/timetable">Timetable</a>
+        <a href="/progress">Progress</a>
+        <a href="/alerts">🔔 Alerts</a>
+        <a href="/logout">Logout</a>
+    </div>
+</nav>
+
+<div class="main">
+
+    <div class="form-box">
+
+        <h1>✏️ Edit Exam</h1>
+
+        <form method="POST">
+
+            <input
+                type="text"
+                name="subject"
+                value="{{ exam['subject'] }}"
+                placeholder="Enter Subject"
+                required
+            >
+
+            <input
+                type="date"
+                name="exam_date"
+                value="{{ exam['exam_date'] }}"
+                required
+            >
+
+            <button type="submit">
+                💾 Save Changes
+            </button>
+
+        </form>
+
+        <a href="/exams" class="btn">
+            ← Back
+        </a>
+
+    </div>
+
+</div>
+
+</body>
+</html>
