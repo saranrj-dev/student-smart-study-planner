@@ -151,6 +151,46 @@ def login():
         return "Invalid username or password!"
 
     return render_template("login.html")
+#========forget===============
+# ================= FORGOT PASSWORD =================
+
+@app.route("/forgot_password", methods=["GET", "POST"])
+def forgot_password():
+
+    if request.method == "POST":
+
+        username = request.form.get("username", "").strip()
+        new_password = request.form.get("new_password", "").strip()
+
+        if not username or not new_password:
+            return "Please enter username and new password."
+
+        conn = get_db()
+
+        user = conn.execute("""
+            SELECT *
+            FROM users
+            WHERE username = ?
+        """, (username,)).fetchone()
+
+        if user:
+
+            conn.execute("""
+                UPDATE users
+                SET password = ?
+                WHERE username = ?
+            """, (new_password, username))
+
+            conn.commit()
+            conn.close()
+
+            return redirect("/login")
+
+        conn.close()
+
+        return "Username not found!"
+
+    return render_template("forgot_password.html")
 
 
 # ================= LOGOUT =================
