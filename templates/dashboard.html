@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<nav>
+    <h2>🎓 Study Planner</h2>
+
+    <div>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/subjects">Subjects</a>
+        <a href="/assignments">Assignments</a>
+        <a href="/exams">Exams</a>
+        <a href="/timetable">Timetable</a>
+        <a href="/progress">Progress</a>
+        <a href="/alerts">🔔 Alerts</a>
+        <a href="/logout">Logout</a>
+    </div>
+</nav>
+
+<div class="main">
+
+    <h1>Welcome, {{ username }} 👋</h1>
+
+    <div class="cards">
+
+        <div class="card">
+            <h2>📚</h2>
+            <h3>Subjects</h3>
+            <p>{{ subjects_count }}</p>
+        </div>
+
+        <div class="card">
+            <h2>📝</h2>
+            <h3>Pending Assignments</h3>
+            <p>{{ assignments_count }}</p>
+        </div>
+
+        <div class="card">
+            <h2>📅</h2>
+            <h3>Exams</h3>
+            <p>{{ exams_count }}</p>
+        </div>
+
+        <div class="card">
+            <h2>📈</h2>
+            <h3>Topics Completed</h3>
+            <p>{{ completed_topics }} / {{ total_topics }}</p>
+        </div>
+
+    </div>
+
+
+    <h2>📝 Pending Assignments</h2>
+
+    {% if pending_assignments %}
+
+        <table>
+
+            <tr>
+                <th>Subject</th>
+                <th>Assignment</th>
+                <th>Due Date</th>
+            </tr>
+
+            {% for item in pending_assignments %}
+
+            <tr>
+                <td>{{ item["subject"] }}</td>
+                <td>{{ item["title"] }}</td>
+                <td>{{ item["due_date"] }}</td>
+            </tr>
+
+            {% endfor %}
+
+        </table>
+
+    {% else %}
+
+        <p>No pending assignments 🎉</p>
+
+    {% endif %}
+
+
+    <h2>📅 Upcoming Exams</h2>
+
+    {% if upcoming_exams %}
+
+        <table>
+
+            <tr>
+                <th>Subject</th>
+                <th>Date</th>
+                <th>Status</th>
+            </tr>
+
+            {% for exam in upcoming_exams %}
+
+            <tr>
+                <td>{{ exam["subject"] }}</td>
+                <td>{{ exam["exam_date"] }}</td>
+
+                <td>
+                    {% if exam["exam_date"] < today %}
+                        Completed
+                    {% else %}
+                        Upcoming
+                    {% endif %}
+                </td>
+
+            </tr>
+
+            {% endfor %}
+
+        </table>
+
+    {% else %}
+
+        <p>No upcoming exams.</p>
+
+    {% endif %}
+
+</div>
+
+</body>
+</html>
