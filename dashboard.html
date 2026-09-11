@@ -53,6 +53,28 @@
         </div>
 
     </div>
+    <div class="card">
+    <h2>📊 Overall Progress</h2>
+
+    {% if total_topics > 0 %}
+        {% set overall_percentage = ((completed_topics / total_topics) * 100)|round|int %}
+    {% else %}
+        {% set overall_percentage = 0 %}
+    {% endif %}
+
+    <h1>{{ overall_percentage }}%</h1>
+
+    <div class="progress-bar">
+        <div class="progress-fill"
+             style="width: {{ overall_percentage }}%;">
+        </div>
+    </div>
+
+    <p>
+        {{ completed_topics }} / {{ total_topics }}
+        Topics Completed
+    </p>
+</div>
 
 
     <h2>📝 Pending Assignments</h2>
