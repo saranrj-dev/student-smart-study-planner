@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Smart Study Planner</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<div class="hero">
+
+    <h1>🎓 Student Smart Study Planner</h1>
+
+    <p>Plan Your Study. Track Your Progress.</p>
+
+    <a href="/login" class="btn">Login</a>
+
+    <a href="/signup" class="btn">Get Started</a>
+
+</div>
+
+</body>
+</html>
