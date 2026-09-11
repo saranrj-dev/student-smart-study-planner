@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Study Progress</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<!-- =========================
+     NAVBAR
+========================= -->
+
+<nav>
+
+    <h2>🎓 Study Planner</h2>
+
+    <div>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/subjects">Subjects</a>
+        <a href="/assignments">Assignments</a>
+        <a href="/exams">Exams</a>
+        <a href="/timetable">Timetable</a>
+        <a href="/progress">Progress</a>
+        <a href="/alerts">🔔 Alerts</a>
+        <a href="/logout">Logout</a>
+    </div>
+
+</nav>
+
+
+<!-- =========================
+     MAIN
+========================= -->
+
+<div class="main">
+
+    <h1>📈 Study Progress</h1>
+
+
+    <!-- =========================
+         ADD TOPICS
+    ========================= -->
+
+    <div class="card">
+
+        <h2>➕ Add Study Topics</h2>
+
+        <form method="POST">
+
+            <input
+                type="text"
+                name="subject"
+                placeholder="Enter Subject"
+                required
+            >
+
+            <input
+                type="number"
+                name="total_topics"
+                id="total_topics"
+                placeholder="Number of Topics"
+                min="1"
+                required
+            >
+
+            <button
+                type="button"
+                onclick="createTopics()"
+            >
+                ➕ Add Topics
+            </button>
+
+
+            <!-- Topics will appear here -->
+
+            <div id="topics"></div>
+
+
+            <br>
+
+            <button type="submit">
+                💾 Save Progress
+            </button>
+
+        </form>
+
+    </div>
+
+
+    <!-- =========================
+         SUBJECT-WISE PROGRESS
+    ========================= -->
+
+    <h2>📊 Subject-wise Progress</h2>
+
+    {% for item in progress %}
+
+        {% set percentage =
+            ((item["completed"] / item["total"]) * 100)|round|int
+        %}
+
+        <div class="card">
+
+            <h2>📚 {{ item["subject"] }}</h2>
+
+            <h3>{{ percentage }}%</h3>
+
+            <div class="progress-bar">
+
+                <div
+                    class="progress-fill"
+                    style="width: {{ percentage }}%;"
+                >
+                </div>
+
+            </div>
+
+            <p>
+                {{ item["completed"] }}
+                /
+                {{ item["total"] }}
+                Topics Completed
+            </p>
+
+        </div>
+
+    {% else %}
+
+        <p>No progress available yet.</p>
+
+    {% endfor %}
+
+
+    <!-- =========================
+         ALL TOPICS
+    ========================= -->
+
+    <h2>📖 My Topics</h2>
+
+    {% for item in topics %}
+
+        <div class="list-item">
+
+            <strong>
+                📚 {{ item["subject"] }}
+            </strong>
+
+            <br><br>
+
+            📖 {{ item["topic"] }}
+
+            <br><br>
+
+
+            {% if item["completed"] == 1 %}
+
+                <span class="success">
+                    ✅ Completed
+                </span>
+
+            {% else %}
+
+                <form
+                    method="POST"
+                    action="/update_progress/{{ item['id'] }}"
+                    style="display:inline;"
+                >
+
+                    <button type="submit">
+                        Mark Complete
+                    </button>
+
+                </form>
+
+            {% endif %}
+
+        </div>
+
+    {% else %}
+
+        <p>No topics added yet.</p>
+
+    {% endfor %}
+
+</div>
+
+
+<!-- =========================
+     JAVASCRIPT
+========================= -->
+
+<script>
+
+function createTopics() {
+
+    let count =
+        document.getElementById("total_topics").value;
+
+    let container =
+        document.getElementById("topics");
+
+    container.innerHTML = "";
+
+
+    if (count < 1) {
+
+        alert("Please enter number of topics!");
+
+        return;
+    }
+
+
+    for (let i = 1; i <= count; i++) {
+
+        let input =
+            document.createElement("input");
+
+        input.type = "text";
+
+        input.name = "topic" + i;
+
+        input.placeholder =
+            "Enter Topic " + i;
+
+        input.required = true;
+
+        container.appendChild(input);
+
+
+        let label =
+            document.createElement("label");
+
+        label.innerHTML =
+            '<input type="checkbox" name="complete' +
+            i +
+            '"> Completed';
+
+        container.appendChild(label);
+
+
+        container.appendChild(
+            document.createElement("br")
+        );
+
+        container.appendChild(
+            document.createElement("br")
+        );
+
+    }
+
+}
+
+</script>
+
+</body>
+</html>

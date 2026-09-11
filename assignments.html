@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Assignments</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<nav>
+
+    <h2>🎓 Study Planner</h2>
+
+    <div>
+
+        <a href="/dashboard">Dashboard</a>
+
+        <a href="/subjects">Subjects</a>
+
+        <a href="/assignments">Assignments</a>
+
+        <a href="/exams">Exams</a>
+
+        <a href="/timetable">Timetable</a>
+
+        <a href="/progress">Progress</a>
+
+        <a href="/alerts">🔔 Alerts</a>
+
+        <a href="/logout">Logout</a>
+
+    </div>
+
+</nav>
+
+
+<div class="main">
+
+    <h1>📝 Assignment Tracker</h1>
+
+
+    <!-- ADD ASSIGNMENT -->
+
+    <div class="card">
+
+        <h2>➕ Add Assignment</h2>
+
+        <form method="POST">
+
+            <input
+                type="text"
+                name="subject"
+                placeholder="Enter Subject"
+                required
+            >
+
+            <input
+                type="text"
+                name="title"
+                placeholder="Enter Assignment Title"
+                required
+            >
+
+            <input
+                type="date"
+                name="due_date"
+                required
+            >
+
+            <button type="submit">
+                ➕ Add Assignment
+            </button>
+
+        </form>
+
+    </div>
+
+
+    <!-- ASSIGNMENT LIST -->
+
+    <h2>📋 My Assignments</h2>
+
+
+    {% for item in assignments %}
+
+    <div class="list-item">
+
+        <h3>📚 {{ item["subject"] }}</h3>
+
+        <p>
+            📝 <strong>{{ item["title"] }}</strong>
+        </p>
+
+        <p>
+            📅 Due Date:
+            <strong>{{ item["due_date"] }}</strong>
+        </p>
+
+
+        {% if item["due_date"] < today %}
+
+            <p class="danger">
+                ⚠️ Overdue
+            </p>
+
+        {% elif item["due_date"] == today %}
+
+            <p class="danger">
+                🔥 Due Today
+            </p>
+
+        {% else %}
+
+            <p class="success">
+                ⏳ Pending
+            </p>
+
+        {% endif %}
+
+
+        <!-- EDIT -->
+
+        <a
+            href="/edit_assignment/{{ item['id'] }}"
+            class="btn"
+        >
+            ✏️ Edit
+        </a>
+
+
+        <!-- COMPLETE -->
+
+        <form
+            method="POST"
+            action="/complete_assignment/{{ item['id'] }}"
+            style="display:inline;"
+        >
+
+            <button
+                type="submit"
+                onclick="return confirm('Mark this assignment as completed?')"
+            >
+                ✅ Complete
+            </button>
+
+        </form>
+
+    </div>
+
+
+    {% else %}
+
+    <div class="card">
+
+        <p style="font-size:18px;">
+            🎉 No assignments added yet.
+        </p>
+
+    </div>
+
+    {% endfor %}
+
+</div>
+
+</body>
+
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Edit Assignment</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+
+
+<body>
+
+<nav>
+
+    <h2>🎓 Study Planner</h2>
+
+    <div>
+
+        <a href="/dashboard">Dashboard</a>
+        <a href="/subjects">Subjects</a>
+        <a href="/assignments">Assignments</a>
+        <a href="/exams">Exams</a>
+        <a href="/timetable">Timetable</a>
+        <a href="/progress">Progress</a>
+        <a href="/alerts">🔔 Alerts</a>
+        <a href="/logout">Logout</a>
+
+    </div>
+
+</nav>
+
+
+<div class="main">
+
+    <div class="form-box">
+
+        <h1>✏️ Edit Assignment</h1>
+
+
+        <form method="POST">
+
+            <input
+                type="text"
+                name="subject"
+                value="{{ assignment['subject'] }}"
+                placeholder="Subject"
+                required
+            >
+
+
+            <input
+                type="text"
+                name="title"
+                value="{{ assignment['title'] }}"
+                placeholder="Assignment Title"
+                required
+            >
+
+
+            <input
+                type="date"
+                name="due_date"
+                value="{{ assignment['due_date'] }}"
+                required
+            >
+
+
+            <button type="submit">
+                💾 Save Changes
+            </button>
+
+        </form>
+
+
+        <a
+            href="/assignments"
+            class="btn"
+        >
+            ← Back
+        </a>
+
+    </div>
+
+</div>
+
+
+</body>
+
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Alerts</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<nav>
+    <h2>🎓 Study Planner</h2>
+    <a href="/dashboard">Dashboard</a>
+    <a href="/logout">Logout</a>
+</nav>
+
+<div class="main">
+
+    <h1>🔔 Alerts & Reminders</h1>
+
+
+    <h2>📝 Assignment Alerts</h2>
+
+    {% if assignments %}
+
+        {% for item in assignments %}
+
+        <div class="alert-box">
+
+            <strong>{{ item["subject"] }}</strong>
+
+            - {{ item["title"] }}
+
+            <br>
+
+            Due: {{ item["due_date"] }}
+
+            <br>
+
+            {% if item["days_left"] < 0 %}
+
+                ⚠️ Overdue
+
+            {% elif item["days_left"] == 0 %}
+
+                🔥 Due Today
+
+            {% else %}
+
+                ⏰ Due Tomorrow
+
+            {% endif %}
+
+        </div>
+
+        {% endfor %}
+
+    {% else %}
+
+        <p>No urgent assignments 🎉</p>
+
+    {% endif %}
+
+
+    <h2>📅 Exam Alerts</h2>
+
+    {% if exams %}
+
+        {% for exam in exams %}
+
+        <div class="alert-box">
+
+            📚 {{ exam["subject"] }}
+
+            <br>
+
+            Exam: {{ exam["exam_date"] }}
+
+            <br>
+
+            {% if exam["days_left"] == 0 %}
+
+                🔥 Exam Today!
+
+            {% else %}
+
+                ⏰ {{ exam["days_left"] }} day(s) left
+
+            {% endif %}
+
+        </div>
+
+        {% endfor %}
+
+    {% else %}
+
+        <p>No exams within the next 3 days.</p>
+
+    {% endif %}
+
+<h2>🕒 Today's Study Plan</h2>
+
+{% if timetable %}
+
+    {% for item in timetable %}
+
+    <div class="alert-box">
+
+        📚 <strong>{{ item["subject"] }}</strong>
+
+        <br>
+
+        📖 Topic: {{ item["topic"] }}
+
+        <br>
+
+        ⏰ Time:
+        {{ item["start_time"] }}
+        -
+        {{ item["end_time"] }}
+
+        <br>
+
+        🔔 Study time today!
+
+    </div>
+
+    {% endfor %}
+
+{% else %}
+
+    <p>No study plan for today.</p>
+
+{% endif %}
+</div>
+
+</body>
+</html>
