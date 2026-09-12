@@ -723,6 +723,7 @@ def progress():
 
         conn.commit()
 
+    # Subject-wise Progress
     cur.execute("""
         SELECT
             subject,
@@ -734,6 +735,25 @@ def progress():
 
     progress_data = cur.fetchall()
 
+    # Overall Progress
+    overall_total = sum(
+        int(item["total"])
+        for item in progress_data
+    )
+
+    overall_completed = sum(
+        int(item["completed"] or 0)
+        for item in progress_data
+    )
+
+    if overall_total > 0:
+        overall_percentage = round(
+            (overall_completed / overall_total) * 100
+        )
+    else:
+        overall_percentage = 0
+
+    # All Topics
     cur.execute("""
         SELECT *
         FROM study_topics
@@ -748,7 +768,10 @@ def progress():
     return render_template(
         "progress.html",
         progress=progress_data,
-        topics=topics
+        topics=topics,
+        overall_total=overall_total,
+        overall_completed=overall_completed,
+        overall_percentage=overall_percentage
     )
 
 
