@@ -2,13 +2,39 @@
 <html>
 <head>
     <title>Exams</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+        .countdown {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .today {
+            color: red;
+            font-weight: bold;
+        }
+
+        .completed {
+            color: green;
+            font-weight: bold;
+        }
+
+        .upcoming {
+            color: #2563eb;
+            font-weight: bold;
+        }
+    </style>
 </head>
 
 <body>
 
 <nav>
     <h2>🎓 Study Planner</h2>
+
     <div>
         <a href="/dashboard">Dashboard</a>
         <a href="/subjects">Subjects</a>
@@ -21,11 +47,16 @@
     </div>
 </nav>
 
+
 <div class="main">
 
-    <h1>📅 Exams</h1>
+    <h1>📅 Exam Planner</h1>
+
+
+    <!-- ADD EXAM -->
 
     <div class="card">
+
         <h2>➕ Add Exam</h2>
 
         <form method="POST">
@@ -44,35 +75,56 @@
             >
 
             <button type="submit">
-                Add Exam
+                ➕ Add Exam
             </button>
 
         </form>
+
     </div>
 
-    <h2>📚 My Exams</h2>
+
+    <!-- EXAM LIST -->
+
+    <h2>📋 My Exams</h2>
 
     {% for exam in exams %}
 
     <div class="list-item">
 
-        <strong>📚 {{ exam["subject"] }}</strong>
-        <br><br>
+        <h3>📚 {{ exam["subject"] }}</h3>
 
-        📅 Exam Date:
-        {{ exam["exam_date"] }}
+        <p>
+            📅 Exam Date:
+            <strong>{{ exam["exam_date"] }}</strong>
+        </p>
 
-        <br><br>
 
         {% if exam["exam_date"] < today %}
-            <span class="success">✅ Completed</span>
+
+            <p class="completed">
+                ✅ Completed
+            </p>
+
         {% elif exam["exam_date"] == today %}
-            <span class="danger">🔥 Exam Today</span>
+
+            <p class="today">
+                🔥 Exam Today
+            </p>
+
         {% else %}
-            <span>⏳ Upcoming</span>
+
+            <p class="upcoming">
+                ⏳ Upcoming
+            </p>
+
+            <p class="countdown">
+                📆 {{ exam["days_left"] }} days left
+            </p>
+
         {% endif %}
 
-        <br><br>
+
+        <!-- EDIT -->
 
         <a
             href="/edit_exam/{{ exam['id'] }}"
@@ -81,21 +133,36 @@
             ✏️ Edit
         </a>
 
+
+        <!-- DELETE -->
+
         <form
             method="POST"
             action="/delete_exam/{{ exam['id'] }}"
             style="display:inline;"
         >
-            <button type="submit">
+
+            <button
+                type="submit"
+                onclick="return confirm('Delete this exam?')"
+            >
                 🗑️ Delete
             </button>
+
         </form>
 
     </div>
 
+
     {% else %}
 
-    <p>No exams added yet.</p>
+    <div class="card">
+
+        <p style="font-size:18px;">
+            📅 No exams added yet.
+        </p>
+
+    </div>
 
     {% endfor %}
 
