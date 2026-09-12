@@ -86,7 +86,7 @@
     {% endif %}
 
 
-    <h2>📅 Upcoming Exams</h2>
+    <h2>📅 Exams</h2>
 
     {% if upcoming_exams %}
 
@@ -95,21 +95,33 @@
             <tr>
                 <th>Subject</th>
                 <th>Date</th>
-                <th>Status</th>
+                <th>Countdown</th>
             </tr>
 
             {% for exam in upcoming_exams %}
 
             <tr>
+
                 <td>{{ exam["subject"] }}</td>
+
                 <td>{{ exam["exam_date"] }}</td>
 
                 <td>
-                    {% if exam["exam_date"] < today %}
-                        Completed
+
+                    {% if exam["days_left"] == 0 %}
+
+                        🔥 <strong>Exam Today</strong>
+
+                    {% elif exam["days_left"] == 1 %}
+
+                        ⏳ <strong>1 day left</strong>
+
                     {% else %}
-                        Upcoming
+
+                        ⏳ <strong>{{ exam["days_left"] }} days left</strong>
+
                     {% endif %}
+
                 </td>
 
             </tr>
