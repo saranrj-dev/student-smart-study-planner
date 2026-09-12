@@ -3,9 +3,22 @@ from datetime import date, datetime
 import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
+import cloudinary
+import cloudinary.uploader
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = "student-study-planner-secret"
+
+
+# ================= CLOUDINARY =================
+
+cloudinary.config(
+    cloud_name=os.environ.get("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.environ.get("CLOUDINARY_API_KEY"),
+    api_secret=os.environ.get("CLOUDINARY_API_SECRET"),
+    secure=True
+)
 
 
 # ================= DATABASE =================
@@ -14,8 +27,11 @@ DATABASE_URL = os.environ.get("DATABASE_URL")
 
 
 def get_db():
+
     if not DATABASE_URL:
-        raise Exception("DATABASE_URL is not configured in Render Environment.")
+        raise Exception(
+            "DATABASE_URL is not configured in Render Environment."
+        )
 
     return psycopg2.connect(
         DATABASE_URL,
@@ -28,6 +44,7 @@ def init_db():
     conn = get_db()
     cur = conn.cursor()
 
+    # USERS
     cur.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,
@@ -36,6 +53,7 @@ def init_db():
         )
     """)
 
+    # SUBJECTS
     cur.execute("""
         CREATE TABLE IF NOT EXISTS subjects (
             id SERIAL PRIMARY KEY,
@@ -43,6 +61,7 @@ def init_db():
         )
     """)
 
+    # ASSIGNMENTS
     cur.execute("""
         CREATE TABLE IF NOT EXISTS assignments (
             id SERIAL PRIMARY KEY,
@@ -53,6 +72,7 @@ def init_db():
         )
     """)
 
+    # EXAMS
     cur.execute("""
         CREATE TABLE IF NOT EXISTS exams (
             id SERIAL PRIMARY KEY,
@@ -62,6 +82,7 @@ def init_db():
         )
     """)
 
+    # TIMETABLE
     cur.execute("""
         CREATE TABLE IF NOT EXISTS timetable (
             id SERIAL PRIMARY KEY,
@@ -73,6 +94,7 @@ def init_db():
         )
     """)
 
+    # STUDY TOPICS
     cur.execute("""
         CREATE TABLE IF NOT EXISTS study_topics (
             id SERIAL PRIMARY KEY,
@@ -94,6 +116,12 @@ def init_db():
         )
     """)
 
+    # ADD PUBLIC ID FOR CLOUDINARY
+    cur.execute("""
+        ALTER TABLE pdf_files
+        ADD COLUMN IF NOT EXISTS public_id TEXT
+    """)
+
     conn.commit()
 
     cur.close()
@@ -107,6 +135,7 @@ init_db()
 
 @app.route("/")
 def home():
+
     return render_template("index.html")
 
 
@@ -117,22 +146,34 @@ def signup():
 
     if request.method == "POST":
 
-        username = request.form.get("username", "").strip()
-        password = request.form.get("password", "").strip()
+        username = request.form.get(
+            "username", ""
+        ).strip()
+
+        password = request.form.get(
+            "password", ""
+        ).strip()
 
         if not username or not password:
+
             return "Please enter username and password."
 
         conn = get_db()
         cur = conn.cursor()
 
         try:
-            cur.execute(
-                "INSERT INTO users (username, password) VALUES (%s, %s)",
+
+            cur.execute("""
+                INSERT INTO users
                 (username, password)
-            )
+                VALUES (%s, %s)
+            """, (
+                username,
+                password
+            ))
 
             conn.commit()
+
             cur.close()
             conn.close()
 
@@ -141,11 +182,11 @@ def signup():
         except psycopg2.IntegrityError:
 
             conn.rollback()
+
             cur.close()
             conn.close()
 
             return "Username already exists!"
-
 
     return render_template("signup.html")
 
@@ -157,8 +198,13 @@ def login():
 
     if request.method == "POST":
 
-        username = request.form.get("username", "").strip()
-        password = request.form.get("password", "").strip()
+        username = request.form.get(
+            "username", ""
+        ).strip()
+
+        password = request.form.get(
+            "password", ""
+        ).strip()
 
         conn = get_db()
         cur = conn.cursor()
@@ -166,8 +212,12 @@ def login():
         cur.execute("""
             SELECT *
             FROM users
-            WHERE username = %s AND password = %s
-        """, (username, password))
+            WHERE username = %s
+            AND password = %s
+        """, (
+            username,
+            password
+        ))
 
         user = cur.fetchone()
 
@@ -192,10 +242,16 @@ def forgot_password():
 
     if request.method == "POST":
 
-        username = request.form.get("username", "").strip()
-        new_password = request.form.get("new_password", "").strip()
+        username = request.form.get(
+            "username", ""
+        ).strip()
+
+        new_password = request.form.get(
+            "new_password", ""
+        ).strip()
 
         if not username or not new_password:
+
             return "Please enter username and new password."
 
         conn = get_db()
@@ -215,7 +271,10 @@ def forgot_password():
                 UPDATE users
                 SET password = %s
                 WHERE username = %s
-            """, (new_password, username))
+            """, (
+                new_password,
+                username
+            ))
 
             conn.commit()
 
@@ -248,6 +307,7 @@ def logout():
 def dashboard():
 
     if "username" not in session:
+
         return redirect("/login")
 
     conn = get_db()
@@ -258,6 +318,7 @@ def dashboard():
         SELECT COUNT(*) AS count
         FROM subjects
     """)
+
     subjects_count = cur.fetchone()["count"]
 
     # PENDING ASSIGNMENTS
@@ -266,6 +327,7 @@ def dashboard():
         FROM assignments
         WHERE completed = 0
     """)
+
     assignments_count = cur.fetchone()["count"]
 
     # EXAM COUNT
@@ -273,6 +335,7 @@ def dashboard():
         SELECT COUNT(*) AS count
         FROM exams
     """)
+
     exams_count = cur.fetchone()["count"]
 
     # COMPLETED TOPICS
@@ -281,6 +344,7 @@ def dashboard():
         FROM study_topics
         WHERE completed = 1
     """)
+
     completed_topics = cur.fetchone()["count"]
 
     # TOTAL TOPICS
@@ -288,6 +352,7 @@ def dashboard():
         SELECT COUNT(*) AS count
         FROM study_topics
     """)
+
     total_topics = cur.fetchone()["count"]
 
     # PENDING ASSIGNMENTS LIST
@@ -298,13 +363,13 @@ def dashboard():
         ORDER BY due_date
         LIMIT 5
     """)
+
     pending_assignments = cur.fetchall()
 
     # TODAY
     today = date.today()
 
     # UPCOMING EXAMS
-    # exam_date is TEXT in PostgreSQL, so cast it to DATE
     cur.execute("""
         SELECT *
         FROM exams
@@ -364,12 +429,14 @@ def dashboard():
         today=today.isoformat()
     )
 
+
 # ================= SUBJECTS =================
 
 @app.route("/subjects", methods=["GET", "POST"])
 def subjects():
 
     if "username" not in session:
+
         return redirect("/login")
 
     conn = get_db()
@@ -377,14 +444,16 @@ def subjects():
 
     if request.method == "POST":
 
-        name = request.form.get("name", "").strip()
+        name = request.form.get(
+            "name", ""
+        ).strip()
 
         if name:
 
-            cur.execute(
-                "INSERT INTO subjects (name) VALUES (%s)",
-                (name,)
-            )
+            cur.execute("""
+                INSERT INTO subjects (name)
+                VALUES (%s)
+            """, (name,))
 
             conn.commit()
 
@@ -411,17 +480,19 @@ def subjects():
 def delete_subject(id):
 
     if "username" not in session:
+
         return redirect("/login")
 
     conn = get_db()
     cur = conn.cursor()
 
-    cur.execute(
-        "DELETE FROM subjects WHERE id = %s",
-        (id,)
-    )
+    cur.execute("""
+        DELETE FROM subjects
+        WHERE id = %s
+    """, (id,))
 
     conn.commit()
+
     cur.close()
     conn.close()
 
@@ -434,6 +505,7 @@ def delete_subject(id):
 def assignments():
 
     if "username" not in session:
+
         return redirect("/login")
 
     conn = get_db()
@@ -441,9 +513,17 @@ def assignments():
 
     if request.method == "POST":
 
-        subject = request.form.get("subject", "").strip()
-        title = request.form.get("title", "").strip()
-        due_date = request.form.get("due_date", "")
+        subject = request.form.get(
+            "subject", ""
+        ).strip()
+
+        title = request.form.get(
+            "title", ""
+        ).strip()
+
+        due_date = request.form.get(
+            "due_date", ""
+        )
 
         if subject and title and due_date:
 
@@ -451,7 +531,11 @@ def assignments():
                 INSERT INTO assignments
                 (subject, title, due_date, completed)
                 VALUES (%s, %s, %s, 0)
-            """, (subject, title, due_date))
+            """, (
+                subject,
+                title,
+                due_date
+            ))
 
             conn.commit()
 
@@ -481,15 +565,16 @@ def assignments():
 def complete_assignment(id):
 
     if "username" not in session:
+
         return redirect("/login")
 
     conn = get_db()
     cur = conn.cursor()
 
-    cur.execute(
-        "DELETE FROM assignments WHERE id = %s",
-        (id,)
-    )
+    cur.execute("""
+        DELETE FROM assignments
+        WHERE id = %s
+    """, (id,))
 
     conn.commit()
 
@@ -505,6 +590,7 @@ def complete_assignment(id):
 def edit_assignment(id):
 
     if "username" not in session:
+
         return redirect("/login")
 
     conn = get_db()
@@ -512,9 +598,17 @@ def edit_assignment(id):
 
     if request.method == "POST":
 
-        subject = request.form.get("subject", "").strip()
-        title = request.form.get("title", "").strip()
-        due_date = request.form.get("due_date", "")
+        subject = request.form.get(
+            "subject", ""
+        ).strip()
+
+        title = request.form.get(
+            "title", ""
+        ).strip()
+
+        due_date = request.form.get(
+            "due_date", ""
+        )
 
         if subject and title and due_date:
 
@@ -524,7 +618,12 @@ def edit_assignment(id):
                     title = %s,
                     due_date = %s
                 WHERE id = %s
-            """, (subject, title, due_date, id))
+            """, (
+                subject,
+                title,
+                due_date,
+                id
+            ))
 
             conn.commit()
 
@@ -545,6 +644,7 @@ def edit_assignment(id):
     conn.close()
 
     if assignment is None:
+
         return "Assignment not found!"
 
     return render_template(
@@ -554,10 +654,12 @@ def edit_assignment(id):
 
 
 # ================= EXAMS =================
+
 @app.route("/exams", methods=["GET", "POST"])
 def exams():
 
     if "username" not in session:
+
         return redirect("/login")
 
     conn = get_db()
@@ -566,8 +668,13 @@ def exams():
     # ADD EXAM
     if request.method == "POST":
 
-        subject = request.form.get("subject", "").strip()
-        exam_date = request.form.get("exam_date", "")
+        subject = request.form.get(
+            "subject", ""
+        ).strip()
+
+        exam_date = request.form.get(
+            "exam_date", ""
+        )
 
         if subject and exam_date:
 
@@ -595,20 +702,20 @@ def exams():
     # TODAY
     today = date.today()
 
-    # CALCULATE COUNTDOWN
+    # COUNTDOWN
     for exam in exams_data:
 
         exam_day = exam["exam_date"]
 
-        # PostgreSQL string date
         if isinstance(exam_day, str):
+
             exam_day = datetime.strptime(
                 exam_day,
                 "%Y-%m-%d"
             ).date()
 
-        # PostgreSQL datetime
         elif hasattr(exam_day, "date"):
+
             exam_day = exam_day.date()
 
         exam["days_left"] = (
@@ -625,13 +732,13 @@ def exams():
     )
 
 
-
 # ================= EDIT EXAM =================
 
 @app.route("/edit_exam/<int:id>", methods=["GET", "POST"])
 def edit_exam(id):
 
     if "username" not in session:
+
         return redirect("/login")
 
     conn = get_db()
@@ -639,8 +746,13 @@ def edit_exam(id):
 
     if request.method == "POST":
 
-        subject = request.form.get("subject", "").strip()
-        exam_date = request.form.get("exam_date", "")
+        subject = request.form.get(
+            "subject", ""
+        ).strip()
+
+        exam_date = request.form.get(
+            "exam_date", ""
+        )
 
         if subject and exam_date:
 
@@ -649,7 +761,11 @@ def edit_exam(id):
                 SET subject = %s,
                     exam_date = %s
                 WHERE id = %s
-            """, (subject, exam_date, id))
+            """, (
+                subject,
+                exam_date,
+                id
+            ))
 
             conn.commit()
 
@@ -670,6 +786,7 @@ def edit_exam(id):
     conn.close()
 
     if exam is None:
+
         return "Exam not found!"
 
     return render_template(
@@ -684,15 +801,16 @@ def edit_exam(id):
 def delete_exam(id):
 
     if "username" not in session:
+
         return redirect("/login")
 
     conn = get_db()
     cur = conn.cursor()
 
-    cur.execute(
-        "DELETE FROM exams WHERE id = %s",
-        (id,)
-    )
+    cur.execute("""
+        DELETE FROM exams
+        WHERE id = %s
+    """, (id,))
 
     conn.commit()
 
@@ -708,6 +826,7 @@ def delete_exam(id):
 def timetable():
 
     if "username" not in session:
+
         return redirect("/login")
 
     conn = get_db()
@@ -715,17 +834,38 @@ def timetable():
 
     if request.method == "POST":
 
-        subject = request.form.get("subject", "").strip()
-        study_date = request.form.get("study_date", "")
-        start_time = request.form.get("start_time", "")
-        end_time = request.form.get("end_time", "")
-        topic = request.form.get("topic", "").strip()
+        subject = request.form.get(
+            "subject", ""
+        ).strip()
 
-        if subject and study_date and start_time and end_time and topic:
+        study_date = request.form.get(
+            "study_date", ""
+        )
+
+        start_time = request.form.get(
+            "start_time", ""
+        )
+
+        end_time = request.form.get(
+            "end_time", ""
+        )
+
+        topic = request.form.get(
+            "topic", ""
+        ).strip()
+
+        if (
+            subject
+            and study_date
+            and start_time
+            and end_time
+            and topic
+        ):
 
             cur.execute("""
                 INSERT INTO timetable
-                (subject, study_date, start_time, end_time, topic)
+                (subject, study_date, start_time,
+                 end_time, topic)
                 VALUES (%s, %s, %s, %s, %s)
             """, (
                 subject,
@@ -760,6 +900,7 @@ def timetable():
 def progress():
 
     if "username" not in session:
+
         return redirect("/login")
 
     conn = get_db()
@@ -767,19 +908,31 @@ def progress():
 
     if request.method == "POST":
 
-        subject = request.form.get("subject", "").strip()
+        subject = request.form.get(
+            "subject", ""
+        ).strip()
 
         try:
+
             total_topics = int(
-                request.form.get("total_topics", 0)
+                request.form.get(
+                    "total_topics",
+                    0
+                )
             )
+
         except ValueError:
+
             total_topics = 0
 
-        for i in range(1, total_topics + 1):
+        for i in range(
+            1,
+            total_topics + 1
+        ):
 
             topic = request.form.get(
-                f"topic{i}", ""
+                f"topic{i}",
+                ""
             ).strip()
 
             completed = 1 if request.form.get(
@@ -800,7 +953,7 @@ def progress():
 
         conn.commit()
 
-    # Subject-wise Progress
+    # SUBJECT-WISE PROGRESS
     cur.execute("""
         SELECT
             subject,
@@ -812,7 +965,7 @@ def progress():
 
     progress_data = cur.fetchall()
 
-    # Overall Progress
+    # OVERALL PROGRESS
     overall_total = sum(
         int(item["total"])
         for item in progress_data
@@ -824,13 +977,19 @@ def progress():
     )
 
     if overall_total > 0:
+
         overall_percentage = round(
-            (overall_completed / overall_total) * 100
+            (
+                overall_completed
+                / overall_total
+            ) * 100
         )
+
     else:
+
         overall_percentage = 0
 
-    # All Topics
+    # ALL TOPICS
     cur.execute("""
         SELECT *
         FROM study_topics
@@ -858,6 +1017,7 @@ def progress():
 def update_progress(id):
 
     if "username" not in session:
+
         return redirect("/login")
 
     conn = get_db()
@@ -877,12 +1037,154 @@ def update_progress(id):
     return redirect("/progress")
 
 
+# ================= PDF NOTES =================
+
+@app.route("/pdfs", methods=["GET", "POST"])
+def pdfs():
+
+    if "username" not in session:
+
+        return redirect("/login")
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    if request.method == "POST":
+
+        pdf = request.files.get("pdf")
+
+        subject = request.form.get(
+            "subject",
+            ""
+        ).strip()
+
+        if not pdf or pdf.filename == "":
+
+            cur.close()
+            conn.close()
+
+            return "Please select a PDF file."
+
+        if not pdf.filename.lower().endswith(".pdf"):
+
+            cur.close()
+            conn.close()
+
+            return "Only PDF files are allowed."
+
+        filename = secure_filename(
+            pdf.filename
+        )
+
+        # UPLOAD TO CLOUDINARY
+        result = cloudinary.uploader.upload(
+            pdf,
+            resource_type="raw",
+            folder="student-study-planner/pdfs"
+        )
+
+        filepath = result["secure_url"]
+
+        public_id = result["public_id"]
+
+        # SAVE INFORMATION IN DATABASE
+        cur.execute("""
+            INSERT INTO pdf_files
+            (username, subject, filename,
+             filepath, public_id)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (
+            session["username"],
+            subject,
+            filename,
+            filepath,
+            public_id
+        ))
+
+        conn.commit()
+
+    # SHOW ONLY CURRENT USER PDFs
+    cur.execute("""
+        SELECT *
+        FROM pdf_files
+        WHERE username = %s
+        ORDER BY id DESC
+    """, (
+        session["username"],
+    ))
+
+    pdf_files = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    return render_template(
+        "pdfs.html",
+        pdf_files=pdf_files
+    )
+
+
+# ================= DELETE PDF =================
+
+@app.route("/delete_pdf/<int:id>", methods=["POST"])
+def delete_pdf(id):
+
+    if "username" not in session:
+
+        return redirect("/login")
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    # GET PDF BELONGING TO CURRENT USER
+    cur.execute("""
+        SELECT *
+        FROM pdf_files
+        WHERE id = %s
+        AND username = %s
+    """, (
+        id,
+        session["username"]
+    ))
+
+    pdf = cur.fetchone()
+
+    if pdf:
+
+        # DELETE FROM CLOUDINARY
+        if pdf["public_id"]:
+
+            cloudinary.uploader.destroy(
+                pdf["public_id"],
+                resource_type="raw",
+                invalidate=True
+            )
+
+        # DELETE FROM DATABASE
+        cur.execute("""
+            DELETE FROM pdf_files
+            WHERE id = %s
+            AND username = %s
+        """, (
+            id,
+            session["username"]
+        ))
+
+        conn.commit()
+
+    cur.close()
+    conn.close()
+
+    return redirect("/pdfs")
+
+
 # ================= ALERTS =================
 
 @app.route("/alerts")
 def alerts():
 
     if "username" not in session:
+
         return redirect("/login")
 
     conn = get_db()
@@ -890,6 +1192,7 @@ def alerts():
 
     today = date.today()
 
+    # ASSIGNMENTS
     cur.execute("""
         SELECT *
         FROM assignments
@@ -899,6 +1202,7 @@ def alerts():
 
     assignments_data = cur.fetchall()
 
+    # EXAMS
     cur.execute("""
         SELECT *
         FROM exams
@@ -907,6 +1211,7 @@ def alerts():
 
     exams_data = cur.fetchall()
 
+    # TIMETABLE
     cur.execute("""
         SELECT *
         FROM timetable
@@ -918,8 +1223,7 @@ def alerts():
     cur.close()
     conn.close()
 
-
-    # Assignment Alerts
+    # ASSIGNMENT ALERTS
 
     alert_assignments = []
 
@@ -930,7 +1234,9 @@ def alerts():
             "%Y-%m-%d"
         ).date()
 
-        days_left = (due - today).days
+        days_left = (
+            due - today
+        ).days
 
         if days_left <= 1:
 
@@ -941,8 +1247,7 @@ def alerts():
                 "days_left": days_left
             })
 
-
-    # Exam Alerts
+    # EXAM ALERTS
 
     alert_exams = []
 
@@ -953,7 +1258,9 @@ def alerts():
             "%Y-%m-%d"
         ).date()
 
-        days_left = (exam_day - today).days
+        days_left = (
+            exam_day - today
+        ).days
 
         if 0 <= days_left <= 3:
 
@@ -963,8 +1270,7 @@ def alerts():
                 "days_left": days_left
             })
 
-
-    # Today's Timetable
+    # TODAY'S TIMETABLE
 
     alert_timetable = []
 
@@ -979,7 +1285,6 @@ def alerts():
                 "end_time": item["end_time"]
             })
 
-
     return render_template(
         "alerts.html",
         assignments=alert_assignments,
@@ -991,4 +1296,5 @@ def alerts():
 # ================= RUN =================
 
 if __name__ == "__main__":
+
     app.run()
