@@ -1,296 +1,303 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Study Progress</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Study Progress - Student Smart Study Planner</title>
 
     <link rel="stylesheet"
           href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+        .progress-bar {
+            width: 100%;
+            height: 22px;
+            background: #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #4CAF50;
+            border-radius: 12px;
+            transition: width 0.5s ease;
+        }
+
+        .overall-card {
+            text-align: center;
+        }
+
+        .overall-percentage {
+            font-size: 45px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .topic-item {
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            background: #f5f5f5;
+        }
+
+        .completed-topic {
+            color: green;
+            font-weight: bold;
+        }
+
+        .add-topic-box {
+            margin-bottom: 25px;
+        }
+
+        .topic-input {
+            margin: 8px 0;
+            padding: 10px;
+            width: 90%;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+    </style>
 </head>
 
 <body>
 
-<!-- =========================
-     NAVBAR
-========================= -->
-
-<nav>
-
-    <h2>🎓 Study Planner</h2>
-
-    <div>
+    <!-- NAVBAR -->
+    <nav>
         <a href="/dashboard">Dashboard</a>
         <a href="/subjects">Subjects</a>
         <a href="/assignments">Assignments</a>
         <a href="/exams">Exams</a>
         <a href="/timetable">Timetable</a>
         <a href="/progress">Progress</a>
-        <a href="/alerts">🔔 Alerts</a>
+        <a href="/alerts">Alerts</a>
         <a href="/logout">Logout</a>
-    </div>
-    <!-- =========================
-     OVERALL PROGRESS
-========================= -->
+    </nav>
 
-{% set overall_completed = progress | sum(attribute="completed") %}
-{% set overall_total = progress | sum(attribute="total") %}
 
-{% if overall_total > 0 %}
-    {% set overall_percentage =
-        ((overall_completed / overall_total) * 100)|round|int
-    %}
-{% else %}
-    {% set overall_percentage = 0 %}
-{% endif %}
+    <div class="container">
 
-<div class="card">
+        <h1>📊 Study Progress</h1>
 
-    <h2>📊 Overall Progress</h2>
 
-    <h1>{{ overall_percentage }}%</h1>
+        <!-- ADD STUDY TOPICS -->
+        <div class="card add-topic-box">
 
-    <div class="progress-bar">
+            <h2>➕ Add Study Topics</h2>
 
-        <div
-            class="progress-fill"
-            style="width: {{ overall_percentage }}%;"
-        >
+            <form method="POST">
+
+                <label>Subject:</label>
+
+                <input type="text"
+                       name="subject"
+                       placeholder="Enter subject"
+                       required>
+
+
+                <br><br>
+
+
+                <label>Total Topics:</label>
+
+                <input type="number"
+                       id="total_topics"
+                       name="total_topics"
+                       min="1"
+                       placeholder="Example: 5"
+                       required>
+
+
+                <br><br>
+
+
+                <button type="button"
+                        onclick="createTopics()">
+                    Add Topics
+                </button>
+
+
+                <div id="topics-container"></div>
+
+
+                <br>
+
+                <button type="submit">
+                    Save Progress
+                </button>
+
+            </form>
+
         </div>
 
-    </div>
 
-    <p>
-        {{ overall_completed }} / {{ overall_total }}
-        Topics Completed
-    </p>
+        <!-- OVERALL PROGRESS -->
+        <div class="card overall-card">
 
-</div>
+            <h2>📊 Overall Progress</h2>
 
-</nav>
-
-
-<!-- =========================
-     MAIN
-========================= -->
-
-<div class="main">
-
-    <h1>📈 Study Progress</h1>
-
-
-    <!-- =========================
-         ADD TOPICS
-    ========================= -->
-
-    <div class="card">
-
-        <h2>➕ Add Study Topics</h2>
-
-        <form method="POST">
-
-            <input
-                type="text"
-                name="subject"
-                placeholder="Enter Subject"
-                required
-            >
-
-            <input
-                type="number"
-                name="total_topics"
-                id="total_topics"
-                placeholder="Number of Topics"
-                min="1"
-                required
-            >
-
-            <button
-                type="button"
-                onclick="createTopics()"
-            >
-                ➕ Add Topics
-            </button>
-
-
-            <!-- Topics will appear here -->
-
-            <div id="topics"></div>
-
-
-            <br>
-
-            <button type="submit">
-                💾 Save Progress
-            </button>
-
-        </form>
-
-    </div>
-
-
-    <!-- =========================
-         SUBJECT-WISE PROGRESS
-    ========================= -->
-
-    <h2>📊 Subject-wise Progress</h2>
-
-    {% for item in progress %}
-
-        {% set percentage =
-            ((item["completed"] / item["total"]) * 100)|round|int
-        %}
-
-        <div class="card">
-
-            <h2>📚 {{ item["subject"] }}</h2>
-
-            <h3>{{ percentage }}%</h3>
+            <div class="overall-percentage">
+                {{ overall_percentage }}%
+            </div>
 
             <div class="progress-bar">
 
-                <div
-                    class="progress-fill"
-                    style="width: {{ percentage }}%;"
-                >
+                <div class="progress-fill"
+                     style="width: {{ overall_percentage }}%;">
                 </div>
 
             </div>
 
             <p>
-                {{ item["completed"] }}
+                <strong>{{ overall_completed }}</strong>
                 /
-                {{ item["total"] }}
+                <strong>{{ overall_total }}</strong>
                 Topics Completed
             </p>
 
         </div>
 
-    {% else %}
 
-        <p>No progress available yet.</p>
+        <!-- SUBJECT WISE PROGRESS -->
+        <div class="card">
 
-    {% endfor %}
+            <h2>📚 Subject-wise Progress</h2>
 
+            {% for item in progress %}
 
-    <!-- =========================
-         ALL TOPICS
-    ========================= -->
+                {% set total = item["total"]|int %}
+                {% set completed = item["completed"]|int %}
+                {% set percentage = ((completed / total) * 100)|round|int if total > 0 else 0 %}
 
-    <h2>📖 My Topics</h2>
+                <div class="topic-item">
 
-    {% for item in topics %}
+                    <h3>{{ item["subject"] }}</h3>
 
-        <div class="list-item">
+                    <p>
+                        {{ completed }} / {{ total }}
+                        Topics Completed
+                    </p>
 
-            <strong>
-                📚 {{ item["subject"] }}
-            </strong>
+                    <div class="progress-bar">
 
-            <br><br>
+                        <div class="progress-fill"
+                             style="width: {{ percentage }}%;">
+                        </div>
 
-            📖 {{ item["topic"] }}
+                    </div>
 
-            <br><br>
+                    <strong>{{ percentage }}%</strong>
 
-
-            {% if item["completed"] == 1 %}
-
-                <span class="success">
-                    ✅ Completed
-                </span>
+                </div>
 
             {% else %}
 
-                <form
-                    method="POST"
-                    action="/update_progress/{{ item['id'] }}"
-                    style="display:inline;"
-                >
+                <p>No progress available yet.</p>
 
-                    <button type="submit">
-                        Mark Complete
-                    </button>
-
-                </form>
-
-            {% endif %}
+            {% endfor %}
 
         </div>
 
-    {% else %}
 
-        <p>No topics added yet.</p>
+        <!-- MY TOPICS -->
+        <div class="card">
 
-    {% endfor %}
+            <h2>📝 My Topics</h2>
 
-</div>
+            {% for topic in topics %}
 
+                <div class="topic-item">
 
-<!-- =========================
-     JAVASCRIPT
-========================= -->
+                    <strong>
+                        {{ topic["subject"] }}
+                    </strong>
 
-<script>
-
-function createTopics() {
-
-    let count =
-        document.getElementById("total_topics").value;
-
-    let container =
-        document.getElementById("topics");
-
-    container.innerHTML = "";
+                    <p>
+                        {{ topic["topic"] }}
+                    </p>
 
 
-    if (count < 1) {
+                    {% if topic["completed"] %}
 
-        alert("Please enter number of topics!");
+                        <span class="completed-topic">
+                            ✅ Completed
+                        </span>
 
-        return;
-    }
+                    {% else %}
 
+                        <form method="POST"
+                              action="/update_progress/{{ topic['id'] }}">
 
-    for (let i = 1; i <= count; i++) {
+                            <button type="submit">
+                                Mark as Completed
+                            </button>
 
-        let input =
-            document.createElement("input");
+                        </form>
 
-        input.type = "text";
+                    {% endif %}
 
-        input.name = "topic" + i;
+                </div>
 
-        input.placeholder =
-            "Enter Topic " + i;
+            {% else %}
 
-        input.required = true;
+                <p>No topics added yet.</p>
 
-        container.appendChild(input);
+            {% endfor %}
 
+        </div>
 
-        let label =
-            document.createElement("label");
-
-        label.innerHTML =
-            '<input type="checkbox" name="complete' +
-            i +
-            '"> Completed';
-
-        container.appendChild(label);
+    </div>
 
 
-        container.appendChild(
-            document.createElement("br")
-        );
+    <!-- CREATE TOPIC INPUTS -->
+    <script>
 
-        container.appendChild(
-            document.createElement("br")
-        );
+        function createTopics() {
 
-    }
+            const count =
+                parseInt(
+                    document.getElementById("total_topics").value
+                );
 
-}
+            const container =
+                document.getElementById("topics-container");
 
-</script>
+            container.innerHTML = "";
+
+            if (!count || count < 1) {
+                return;
+            }
+
+            for (let i = 1; i <= count; i++) {
+
+                const div =
+                    document.createElement("div");
+
+                div.innerHTML = `
+                    <input
+                        type="text"
+                        name="topic${i}"
+                        class="topic-input"
+                        placeholder="Topic ${i}"
+                        required
+                    >
+
+                    <label>
+                        <input
+                            type="checkbox"
+                            name="complete${i}"
+                        >
+                        Completed
+                    </label>
+                `;
+
+                container.appendChild(div);
+            }
+        }
+
+    </script>
 
 </body>
 </html>
