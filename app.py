@@ -1,41 +1,51 @@
 from flask import Flask, render_template, request, redirect, session
 from datetime import date, datetime
-import sqlite3
+import os
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
 app.secret_key = "student-study-planner-secret"
 
-DATABASE = "studyplanner.db"
+
+# ================= DATABASE =================
+
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
 
 def get_db():
-    conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row
-    return conn
+    if not DATABASE_URL:
+        raise Exception("DATABASE_URL is not configured in Render Environment.")
+
+    return psycopg2.connect(
+        DATABASE_URL,
+        cursor_factory=RealDictCursor
+    )
 
 
 def init_db():
 
     conn = get_db()
+    cur = conn.cursor()
 
-    conn.execute("""
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             username TEXT NOT NULL UNIQUE,
             password TEXT NOT NULL
         )
     """)
 
-    conn.execute("""
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS subjects (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             name TEXT NOT NULL
         )
     """)
 
-    conn.execute("""
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS assignments (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             subject TEXT NOT NULL,
             title TEXT NOT NULL,
             due_date TEXT NOT NULL,
@@ -43,18 +53,18 @@ def init_db():
         )
     """)
 
-    conn.execute("""
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS exams (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             subject TEXT NOT NULL,
             exam_date TEXT NOT NULL,
             exam_time TEXT NOT NULL
         )
     """)
 
-    conn.execute("""
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS timetable (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             subject TEXT NOT NULL,
             study_date TEXT NOT NULL,
             start_time TEXT NOT NULL,
@@ -63,9 +73,9 @@ def init_db():
         )
     """)
 
-    conn.execute("""
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS study_topics (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             subject TEXT NOT NULL,
             topic TEXT NOT NULL,
             completed INTEGER DEFAULT 0
@@ -73,6 +83,7 @@ def init_db():
     """)
 
     conn.commit()
+    cur.close()
     conn.close()
 
 
@@ -100,24 +111,28 @@ def signup():
             return "Please enter username and password."
 
         conn = get_db()
+        cur = conn.cursor()
 
         try:
-
-            conn.execute(
-                "INSERT INTO users (username, password) VALUES (?, ?)",
+            cur.execute(
+                "INSERT INTO users (username, password) VALUES (%s, %s)",
                 (username, password)
             )
 
             conn.commit()
+            cur.close()
             conn.close()
 
             return redirect("/login")
 
-        except sqlite3.IntegrityError:
+        except psycopg2.IntegrityError:
 
+            conn.rollback()
+            cur.close()
             conn.close()
 
             return "Username already exists!"
+
 
     return render_template("signup.html")
 
@@ -133,13 +148,17 @@ def login():
         password = request.form.get("password", "").strip()
 
         conn = get_db()
+        cur = conn.cursor()
 
-        user = conn.execute("""
+        cur.execute("""
             SELECT *
             FROM users
-            WHERE username = ? AND password = ?
-        """, (username, password)).fetchone()
+            WHERE username = %s AND password = %s
+        """, (username, password))
 
+        user = cur.fetchone()
+
+        cur.close()
         conn.close()
 
         if user:
@@ -151,7 +170,8 @@ def login():
         return "Invalid username or password!"
 
     return render_template("login.html")
-#========forget===============
+
+
 # ================= FORGOT PASSWORD =================
 
 @app.route("/forgot_password", methods=["GET", "POST"])
@@ -166,26 +186,32 @@ def forgot_password():
             return "Please enter username and new password."
 
         conn = get_db()
+        cur = conn.cursor()
 
-        user = conn.execute("""
+        cur.execute("""
             SELECT *
             FROM users
-            WHERE username = ?
-        """, (username,)).fetchone()
+            WHERE username = %s
+        """, (username,))
+
+        user = cur.fetchone()
 
         if user:
 
-            conn.execute("""
+            cur.execute("""
                 UPDATE users
-                SET password = ?
-                WHERE username = ?
+                SET password = %s
+                WHERE username = %s
             """, (new_password, username))
 
             conn.commit()
+
+            cur.close()
             conn.close()
 
             return redirect("/login")
 
+        cur.close()
         conn.close()
 
         return "Username not found!"
@@ -212,59 +238,65 @@ def dashboard():
         return redirect("/login")
 
     conn = get_db()
+    cur = conn.cursor()
 
-    subjects_count = conn.execute(
-        "SELECT COUNT(*) FROM subjects"
-    ).fetchone()[0]
+    cur.execute("SELECT COUNT(*) AS count FROM subjects")
+    subjects_count = cur.fetchone()["count"]
 
-    assignments_count = conn.execute("""
-        SELECT COUNT(*)
+    cur.execute("""
+        SELECT COUNT(*) AS count
         FROM assignments
         WHERE completed = 0
-    """).fetchone()[0]
+    """)
+    assignments_count = cur.fetchone()["count"]
 
-    exams_count = conn.execute(
-        "SELECT COUNT(*) FROM exams"
-    ).fetchone()[0]
+    cur.execute("SELECT COUNT(*) AS count FROM exams")
+    exams_count = cur.fetchone()["count"]
 
-    completed_topics = conn.execute("""
-        SELECT COUNT(*)
+    cur.execute("""
+        SELECT COUNT(*) AS count
         FROM study_topics
         WHERE completed = 1
-    """).fetchone()[0]
+    """)
+    completed_topics = cur.fetchone()["count"]
 
-    total_topics = conn.execute("""
-        SELECT COUNT(*)
+    cur.execute("""
+        SELECT COUNT(*) AS count
         FROM study_topics
-    """).fetchone()[0]
+    """)
+    total_topics = cur.fetchone()["count"]
 
-    pending_assignments = conn.execute("""
+    cur.execute("""
         SELECT *
         FROM assignments
         WHERE completed = 0
         ORDER BY due_date
         LIMIT 5
-    """).fetchall()
+    """)
+    pending_assignments = cur.fetchall()
 
     today = date.today().isoformat()
 
-    upcoming_exams = conn.execute("""
+    cur.execute("""
         SELECT *
         FROM exams
-        WHERE exam_date >= ?
+        WHERE exam_date >= %s
         ORDER BY exam_date
         LIMIT 5
-    """, (today,)).fetchall()
+    """, (today,))
+    upcoming_exams = cur.fetchall()
 
-    progress_data = conn.execute("""
+    cur.execute("""
         SELECT
             subject,
             COUNT(*) AS total,
             SUM(completed) AS completed
         FROM study_topics
         GROUP BY subject
-    """).fetchall()
+    """)
+    progress_data = cur.fetchall()
 
+    cur.close()
     conn.close()
 
     return render_template(
@@ -291,6 +323,7 @@ def subjects():
         return redirect("/login")
 
     conn = get_db()
+    cur = conn.cursor()
 
     if request.method == "POST":
 
@@ -298,19 +331,22 @@ def subjects():
 
         if name:
 
-            conn.execute(
-                "INSERT INTO subjects (name) VALUES (?)",
+            cur.execute(
+                "INSERT INTO subjects (name) VALUES (%s)",
                 (name,)
             )
 
             conn.commit()
 
-    subjects_data = conn.execute("""
+    cur.execute("""
         SELECT *
         FROM subjects
         ORDER BY id DESC
-    """).fetchall()
+    """)
 
+    subjects_data = cur.fetchall()
+
+    cur.close()
     conn.close()
 
     return render_template(
@@ -328,13 +364,15 @@ def delete_subject(id):
         return redirect("/login")
 
     conn = get_db()
+    cur = conn.cursor()
 
-    conn.execute(
-        "DELETE FROM subjects WHERE id = ?",
+    cur.execute(
+        "DELETE FROM subjects WHERE id = %s",
         (id,)
     )
 
     conn.commit()
+    cur.close()
     conn.close()
 
     return redirect("/subjects")
@@ -349,6 +387,7 @@ def assignments():
         return redirect("/login")
 
     conn = get_db()
+    cur = conn.cursor()
 
     if request.method == "POST":
 
@@ -358,22 +397,25 @@ def assignments():
 
         if subject and title and due_date:
 
-            conn.execute("""
+            cur.execute("""
                 INSERT INTO assignments
                 (subject, title, due_date, completed)
-                VALUES (?, ?, ?, 0)
+                VALUES (%s, %s, %s, 0)
             """, (subject, title, due_date))
 
             conn.commit()
 
-    assignments_data = conn.execute("""
+    cur.execute("""
         SELECT *
         FROM assignments
         ORDER BY due_date
-    """).fetchall()
+    """)
+
+    assignments_data = cur.fetchall()
 
     today = date.today().isoformat()
 
+    cur.close()
     conn.close()
 
     return render_template(
@@ -392,13 +434,16 @@ def complete_assignment(id):
         return redirect("/login")
 
     conn = get_db()
+    cur = conn.cursor()
 
-    conn.execute(
-        "DELETE FROM assignments WHERE id = ?",
+    cur.execute(
+        "DELETE FROM assignments WHERE id = %s",
         (id,)
     )
 
     conn.commit()
+
+    cur.close()
     conn.close()
 
     return redirect("/assignments")
@@ -413,6 +458,7 @@ def edit_assignment(id):
         return redirect("/login")
 
     conn = get_db()
+    cur = conn.cursor()
 
     if request.method == "POST":
 
@@ -422,23 +468,30 @@ def edit_assignment(id):
 
         if subject and title and due_date:
 
-            conn.execute("""
+            cur.execute("""
                 UPDATE assignments
-                SET subject = ?, title = ?, due_date = ?
-                WHERE id = ?
+                SET subject = %s,
+                    title = %s,
+                    due_date = %s
+                WHERE id = %s
             """, (subject, title, due_date, id))
 
             conn.commit()
+
+            cur.close()
             conn.close()
 
             return redirect("/assignments")
 
-    assignment = conn.execute("""
+    cur.execute("""
         SELECT *
         FROM assignments
-        WHERE id = ?
-    """, (id,)).fetchone()
+        WHERE id = %s
+    """, (id,))
 
+    assignment = cur.fetchone()
+
+    cur.close()
     conn.close()
 
     if assignment is None:
@@ -459,6 +512,7 @@ def exams():
         return redirect("/login")
 
     conn = get_db()
+    cur = conn.cursor()
 
     if request.method == "POST":
 
@@ -467,22 +521,25 @@ def exams():
 
         if subject and exam_date:
 
-            conn.execute("""
+            cur.execute("""
                 INSERT INTO exams
                 (subject, exam_date, exam_time)
-                VALUES (?, ?, ?)
+                VALUES (%s, %s, %s)
             """, (subject, exam_date, ""))
 
             conn.commit()
 
-    exams_data = conn.execute("""
+    cur.execute("""
         SELECT *
         FROM exams
         ORDER BY exam_date
-    """).fetchall()
+    """)
+
+    exams_data = cur.fetchall()
 
     today = date.today().isoformat()
 
+    cur.close()
     conn.close()
 
     return render_template(
@@ -501,6 +558,7 @@ def edit_exam(id):
         return redirect("/login")
 
     conn = get_db()
+    cur = conn.cursor()
 
     if request.method == "POST":
 
@@ -509,23 +567,29 @@ def edit_exam(id):
 
         if subject and exam_date:
 
-            conn.execute("""
+            cur.execute("""
                 UPDATE exams
-                SET subject = ?, exam_date = ?
-                WHERE id = ?
+                SET subject = %s,
+                    exam_date = %s
+                WHERE id = %s
             """, (subject, exam_date, id))
 
             conn.commit()
+
+            cur.close()
             conn.close()
 
             return redirect("/exams")
 
-    exam = conn.execute("""
+    cur.execute("""
         SELECT *
         FROM exams
-        WHERE id = ?
-    """, (id,)).fetchone()
+        WHERE id = %s
+    """, (id,))
 
+    exam = cur.fetchone()
+
+    cur.close()
     conn.close()
 
     if exam is None:
@@ -546,13 +610,16 @@ def delete_exam(id):
         return redirect("/login")
 
     conn = get_db()
+    cur = conn.cursor()
 
-    conn.execute(
-        "DELETE FROM exams WHERE id = ?",
+    cur.execute(
+        "DELETE FROM exams WHERE id = %s",
         (id,)
     )
 
     conn.commit()
+
+    cur.close()
     conn.close()
 
     return redirect("/exams")
@@ -567,6 +634,7 @@ def timetable():
         return redirect("/login")
 
     conn = get_db()
+    cur = conn.cursor()
 
     if request.method == "POST":
 
@@ -578,10 +646,10 @@ def timetable():
 
         if subject and study_date and start_time and end_time and topic:
 
-            conn.execute("""
+            cur.execute("""
                 INSERT INTO timetable
                 (subject, study_date, start_time, end_time, topic)
-                VALUES (?, ?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s, %s)
             """, (
                 subject,
                 study_date,
@@ -592,12 +660,15 @@ def timetable():
 
             conn.commit()
 
-    timetable_data = conn.execute("""
+    cur.execute("""
         SELECT *
         FROM timetable
         ORDER BY study_date, start_time
-    """).fetchall()
+    """)
 
+    timetable_data = cur.fetchall()
+
+    cur.close()
     conn.close()
 
     return render_template(
@@ -615,23 +686,17 @@ def progress():
         return redirect("/login")
 
     conn = get_db()
+    cur = conn.cursor()
 
     if request.method == "POST":
 
-        subject = request.form.get(
-            "subject", ""
-        ).strip()
+        subject = request.form.get("subject", "").strip()
 
         try:
-
             total_topics = int(
-                request.form.get(
-                    "total_topics", 0
-                )
+                request.form.get("total_topics", 0)
             )
-
         except ValueError:
-
             total_topics = 0
 
         for i in range(1, total_topics + 1):
@@ -646,10 +711,10 @@ def progress():
 
             if subject and topic:
 
-                conn.execute("""
+                cur.execute("""
                     INSERT INTO study_topics
                     (subject, topic, completed)
-                    VALUES (?, ?, ?)
+                    VALUES (%s, %s, %s)
                 """, (
                     subject,
                     topic,
@@ -658,21 +723,26 @@ def progress():
 
         conn.commit()
 
-    progress_data = conn.execute("""
+    cur.execute("""
         SELECT
             subject,
             COUNT(*) AS total,
             SUM(completed) AS completed
         FROM study_topics
         GROUP BY subject
-    """).fetchall()
+    """)
 
-    topics = conn.execute("""
+    progress_data = cur.fetchall()
+
+    cur.execute("""
         SELECT *
         FROM study_topics
         ORDER BY id DESC
-    """).fetchall()
+    """)
 
+    topics = cur.fetchall()
+
+    cur.close()
     conn.close()
 
     return render_template(
@@ -691,14 +761,17 @@ def update_progress(id):
         return redirect("/login")
 
     conn = get_db()
+    cur = conn.cursor()
 
-    conn.execute("""
+    cur.execute("""
         UPDATE study_topics
         SET completed = 1
-        WHERE id = ?
+        WHERE id = %s
     """, (id,))
 
     conn.commit()
+
+    cur.close()
     conn.close()
 
     return redirect("/progress")
@@ -713,29 +786,38 @@ def alerts():
         return redirect("/login")
 
     conn = get_db()
+    cur = conn.cursor()
 
     today = date.today()
 
-    assignments_data = conn.execute("""
+    cur.execute("""
         SELECT *
         FROM assignments
         WHERE completed = 0
         ORDER BY due_date
-    """).fetchall()
+    """)
 
-    exams_data = conn.execute("""
+    assignments_data = cur.fetchall()
+
+    cur.execute("""
         SELECT *
         FROM exams
         ORDER BY exam_date
-    """).fetchall()
+    """)
 
-    timetable_data = conn.execute("""
+    exams_data = cur.fetchall()
+
+    cur.execute("""
         SELECT *
         FROM timetable
         ORDER BY study_date, start_time
-    """).fetchall()
+    """)
 
+    timetable_data = cur.fetchall()
+
+    cur.close()
     conn.close()
+
 
     # Assignment Alerts
 
@@ -809,4 +891,4 @@ def alerts():
 # ================= RUN =================
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()
