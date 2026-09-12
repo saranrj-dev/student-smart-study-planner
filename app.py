@@ -513,6 +513,7 @@ def exams():
     conn = get_db()
     cur = conn.cursor()
 
+    # ADD EXAM
     if request.method == "POST":
 
         subject = request.form.get("subject", "").strip()
@@ -524,10 +525,15 @@ def exams():
                 INSERT INTO exams
                 (subject, exam_date, exam_time)
                 VALUES (%s, %s, %s)
-            """, (subject, exam_date, ""))
+            """, (
+                subject,
+                exam_date,
+                ""
+            ))
 
             conn.commit()
 
+    # GET EXAMS
     cur.execute("""
         SELECT *
         FROM exams
@@ -536,15 +542,29 @@ def exams():
 
     exams_data = cur.fetchall()
 
+    # TODAY
     today = date.today()
 
+    # CALCULATE COUNTDOWN
     for exam in exams_data:
+
         exam_day = exam["exam_date"]
 
+        # PostgreSQL string date
         if isinstance(exam_day, str):
-    exam_day = datetime.strptime(exam_day, "%Y-%m-%d").date()
+            exam_day = datetime.strptime(
+                exam_day,
+                "%Y-%m-%d"
+            ).date()
 
-exam["days_left"] = (exam_day - today).days
+        # PostgreSQL datetime
+        elif hasattr(exam_day, "date"):
+            exam_day = exam_day.date()
+
+        exam["days_left"] = (
+            exam_day - today
+        ).days
+
     cur.close()
     conn.close()
 
