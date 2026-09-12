@@ -240,9 +240,14 @@ def dashboard():
     conn = get_db()
     cur = conn.cursor()
 
-    cur.execute("SELECT COUNT(*) AS count FROM subjects")
+    # SUBJECT COUNT
+    cur.execute("""
+        SELECT COUNT(*) AS count
+        FROM subjects
+    """)
     subjects_count = cur.fetchone()["count"]
 
+    # PENDING ASSIGNMENTS
     cur.execute("""
         SELECT COUNT(*) AS count
         FROM assignments
@@ -250,9 +255,14 @@ def dashboard():
     """)
     assignments_count = cur.fetchone()["count"]
 
-    cur.execute("SELECT COUNT(*) AS count FROM exams")
+    # EXAM COUNT
+    cur.execute("""
+        SELECT COUNT(*) AS count
+        FROM exams
+    """)
     exams_count = cur.fetchone()["count"]
 
+    # COMPLETED TOPICS
     cur.execute("""
         SELECT COUNT(*) AS count
         FROM study_topics
@@ -260,12 +270,14 @@ def dashboard():
     """)
     completed_topics = cur.fetchone()["count"]
 
+    # TOTAL TOPICS
     cur.execute("""
         SELECT COUNT(*) AS count
         FROM study_topics
     """)
     total_topics = cur.fetchone()["count"]
 
+    # PENDING ASSIGNMENTS LIST
     cur.execute("""
         SELECT *
         FROM assignments
@@ -275,13 +287,16 @@ def dashboard():
     """)
     pending_assignments = cur.fetchall()
 
+    # TODAY
     today = date.today()
 
+    # UPCOMING EXAMS
+    # exam_date is TEXT in PostgreSQL, so cast it to DATE
     cur.execute("""
         SELECT *
         FROM exams
-        WHERE exam_date >= %s
-        ORDER BY exam_date
+        WHERE exam_date::date >= %s
+        ORDER BY exam_date::date
         LIMIT 5
     """, (today,))
 
@@ -293,18 +308,21 @@ def dashboard():
         exam_day = exam["exam_date"]
 
         if isinstance(exam_day, str):
+
             exam_day = datetime.strptime(
                 exam_day,
                 "%Y-%m-%d"
             ).date()
 
         elif hasattr(exam_day, "date"):
+
             exam_day = exam_day.date()
 
         exam["days_left"] = (
             exam_day - today
         ).days
 
+    # SUBJECT-WISE PROGRESS
     cur.execute("""
         SELECT
             subject,
@@ -313,6 +331,7 @@ def dashboard():
         FROM study_topics
         GROUP BY subject
     """)
+
     progress_data = cur.fetchall()
 
     cur.close()
@@ -331,7 +350,6 @@ def dashboard():
         progress=progress_data,
         today=today.isoformat()
     )
-
 
 # ================= SUBJECTS =================
 
