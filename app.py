@@ -82,7 +82,20 @@ def init_db():
         )
     """)
 
+    # PDF FILES
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS pdf_files (
+            id SERIAL PRIMARY KEY,
+            username TEXT NOT NULL,
+            subject TEXT,
+            filename TEXT NOT NULL,
+            filepath TEXT NOT NULL,
+            uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
     conn.commit()
+
     cur.close()
     conn.close()
 
