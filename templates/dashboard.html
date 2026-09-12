@@ -70,7 +70,7 @@
             <h3>Daily Study Goal</h3>
             <p>{{ today_completed }} / {{ daily_goal }}</p>
 
-            {% if today_completed >= daily_goal %}
+            {% if daily_goal > 0 and today_completed >= daily_goal %}
                 <strong class="success">🎉 Goal Completed!</strong>
             {% else %}
                 <form action="/daily_goal" method="POST">
@@ -78,7 +78,7 @@
                         type="number"
                         name="goal"
                         min="1"
-                        value="{{ daily_goal }}"
+                        value="{{ daily_goal if daily_goal > 0 else "" }}"
                         required
                     >
                     <button type="submit">Set Goal</button>
