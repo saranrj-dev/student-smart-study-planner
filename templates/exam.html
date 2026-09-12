@@ -90,10 +90,17 @@
 
         {% else %}
 
-            <p>
-                ⏳ Upcoming
-            </p>
+           {% else %}
 
+    <p>
+        ⏳ Upcoming
+    </p>
+
+    <p>
+        📆 <strong>{{ (exam["exam_date"] - today).days }} days left</strong>
+    </p>
+
+{% endif %}
         {% endif %}
 
 
