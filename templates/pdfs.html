@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Study PDFs</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>📄 Study PDFs</h1>
+    <p>Upload and manage your study materials</p>
+
+    <!-- UPLOAD PDF -->
+
+    <div class="card">
+
+        <h2>📤 Upload PDF</h2>
+
+        <form method="POST" enctype="multipart/form-data">
+
+            <label>Subject</label>
+
+            <input
+                type="text"
+                name="subject"
+                placeholder="Enter subject (optional)"
+            >
+
+            <label>Select PDF</label>
+
+            <input
+                type="file"
+                name="pdf"
+                accept=".pdf,application/pdf"
+                required
+            >
+
+            <button type="submit">
+                Upload PDF
+            </button>
+
+        </form>
+
+    </div>
+
+
+    <!-- PDF LIST -->
+
+    <div class="card">
+
+        <h2>📚 My PDFs</h2>
+
+        {% if pdf_files %}
+
+            {% for pdf in pdf_files %}
+
+                <div class="pdf-item">
+
+                    <h3>📄 {{ pdf["filename"] }}</h3>
+
+                    {% if pdf["subject"] %}
+                        <p>
+                            📚 Subject:
+                            <strong>{{ pdf["subject"] }}</strong>
+                        </p>
+                    {% endif %}
+
+                    <p>
+                        📅 Uploaded:
+                        {{ pdf["uploaded_at"] }}
+                    </p>
+
+                    <a
+                        href="{{ pdf['filepath'] }}"
+                        target="_blank"
+                    >
+                        <button type="button">
+                            👁️ Open PDF
+                        </button>
+                    </a>
+
+                    <form
+                        method="POST"
+                        action="/delete_pdf/{{ pdf['id'] }}"
+                        style="display:inline;"
+                    >
+
+                        <button
+                            type="submit"
+                            onclick="return confirm('Delete this PDF?')"
+                        >
+                            🗑️ Delete
+                        </button>
+
+                    </form>
+
+                </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            <p>No PDFs uploaded yet.</p>
+
+        {% endif %}
+
+    </div>
+
+
+    <!-- BACK -->
+
+    <a href="/dashboard">
+        <button type="button">
+            🏠 Back to Dashboard
+        </button>
+    </a>
+
+</div>
+
+</body>
+</html>
