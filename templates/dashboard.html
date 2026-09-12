@@ -19,6 +19,11 @@
         <a href="/progress">Progress</a>
         <a href="/alerts">🔔 Alerts</a>
         <a href="/pdfs">📚 Notes</a>
+
+        <button class="dark-mode-btn" onclick="toggleDarkMode()">
+            🌙 Dark Mode
+        </button>
+
         <a href="/logout">Logout</a>
     </div>
 </nav>
@@ -53,7 +58,6 @@
             <p>{{ completed_topics }} / {{ total_topics }}</p>
         </div>
 
-        <!-- Study Streak -->
         <div class="card">
             <h2>🔥</h2>
             <h3>Study Streak</h3>
@@ -145,6 +149,25 @@
     {% endif %}
 
 </div>
+
+
+<script>
+function toggleDarkMode() {
+    document.body.classList.toggle("dark-mode");
+
+    if (document.body.classList.contains("dark-mode")) {
+        localStorage.setItem("darkMode", "enabled");
+    } else {
+        localStorage.setItem("darkMode", "disabled");
+    }
+}
+
+window.onload = function() {
+    if (localStorage.getItem("darkMode") === "enabled") {
+        document.body.classList.add("dark-mode");
+    }
+};
+</script>
 
 </body>
 </html>
