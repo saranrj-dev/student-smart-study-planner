@@ -115,7 +115,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS daily_goals (
             id SERIAL PRIMARY KEY,
             username TEXT NOT NULL UNIQUE,
-            goal INTEGER DEFAULT 1
+            goal INTEGER DEFAULT 0
         )
     """)
 
@@ -403,7 +403,7 @@ def dashboard():
     """, (session["username"],))
 
     goal_data = cur.fetchone()
-    daily_goal = goal_data["goal"] if goal_data else 1
+    daily_goal = goal_data["goal"] if goal_data else 0
 
     # TODAY COMPLETED TOPICS
     cur.execute("""
@@ -500,9 +500,9 @@ def daily_goal():
         return redirect("/login")
 
     try:
-        goal = int(request.form.get("goal", 1))
+        goal = int(request.form.get("goal", 0))
     except ValueError:
-        goal = 1
+        goal = 0
 
     if goal < 1:
         goal = 1
