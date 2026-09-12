@@ -504,7 +504,6 @@ def edit_assignment(id):
 
 
 # ================= EXAMS =================
-
 @app.route("/exams", methods=["GET", "POST"])
 def exams():
 
@@ -537,7 +536,15 @@ def exams():
 
     exams_data = cur.fetchall()
 
-    today = date.today().isoformat()
+    today = date.today()
+
+    for exam in exams_data:
+        exam_day = exam["exam_date"]
+
+        if hasattr(exam_day, "date"):
+            exam_day = exam_day.date()
+
+        exam["days_left"] = (exam_day - today).days
 
     cur.close()
     conn.close()
@@ -545,8 +552,9 @@ def exams():
     return render_template(
         "exams.html",
         exams=exams_data,
-        today=today
+        today=today.isoformat()
     )
+
 
 
 # ================= EDIT EXAM =================
