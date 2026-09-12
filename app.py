@@ -541,11 +541,10 @@ def exams():
     for exam in exams_data:
         exam_day = exam["exam_date"]
 
-        if hasattr(exam_day, "date"):
-            exam_day = exam_day.date()
+        if isinstance(exam_day, str):
+    exam_day = datetime.strptime(exam_day, "%Y-%m-%d").date()
 
-        exam["days_left"] = (exam_day - today).days
-
+exam["days_left"] = (exam_day - today).days
     cur.close()
     conn.close()
 
