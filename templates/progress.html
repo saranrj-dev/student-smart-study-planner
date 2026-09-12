@@ -10,6 +10,28 @@
           href="{{ url_for('static', filename='style.css') }}">
 
     <style>
+
+        /* Overall Progress */
+        .overall-card {
+            color: #000000;
+            text-align: center;
+        }
+
+        .overall-card h2,
+        .overall-card h1,
+        .overall-card p,
+        .overall-card strong {
+            color: #000000;
+        }
+
+        .overall-percentage {
+            font-size: 45px;
+            font-weight: bold;
+            color: #000000 !important;
+            margin: 10px 0;
+        }
+
+        /* Progress Bar */
         .progress-bar {
             width: 100%;
             height: 22px;
@@ -26,16 +48,7 @@
             transition: width 0.5s ease;
         }
 
-        .overall-card {
-            text-align: center;
-        }
-
-        .overall-percentage {
-            font-size: 45px;
-            font-weight: bold;
-            margin: 10px 0;
-        }
-
+        /* Topics */
         .topic-item {
             padding: 12px;
             margin: 8px 0;
@@ -44,7 +57,7 @@
         }
 
         .completed-topic {
-            color: green;
+            color: green !important;
             font-weight: bold;
         }
 
@@ -59,6 +72,7 @@
             border: 1px solid #ccc;
             border-radius: 6px;
         }
+
     </style>
 </head>
 
@@ -96,9 +110,7 @@
                        placeholder="Enter subject"
                        required>
 
-
                 <br><br>
-
 
                 <label>Total Topics:</label>
 
@@ -109,18 +121,14 @@
                        placeholder="Example: 5"
                        required>
 
-
                 <br><br>
-
 
                 <button type="button"
                         onclick="createTopics()">
                     Add Topics
                 </button>
 
-
                 <div id="topics-container"></div>
-
 
                 <br>
 
@@ -137,18 +145,6 @@
         <div class="card overall-card">
 
             <h2>📊 Overall Progress</h2>
-            <style>
-    .overall-card {
-        color: #000000;
-    }
-
-    .overall-card h2,
-    .overall-card h1,
-    .overall-card p,
-    .overall-card strong {
-        color: #000000;
-    }
-</style>
 
             <div class="overall-percentage">
                 {{ overall_percentage }}%
@@ -172,7 +168,7 @@
         </div>
 
 
-        <!-- SUBJECT WISE PROGRESS -->
+        <!-- SUBJECT-WISE PROGRESS -->
         <div class="card">
 
             <h2>📚 Subject-wise Progress</h2>
@@ -181,7 +177,13 @@
 
                 {% set total = item["total"]|int %}
                 {% set completed = item["completed"]|int %}
-                {% set percentage = ((completed / total) * 100)|round|int if total > 0 else 0 %}
+
+                {% if total > 0 %}
+                    {% set percentage =
+                        ((completed / total) * 100)|round|int %}
+                {% else %}
+                    {% set percentage = 0 %}
+                {% endif %}
 
                 <div class="topic-item">
 
@@ -229,7 +231,6 @@
                     <p>
                         {{ topic["topic"] }}
                     </p>
-
 
                     {% if topic["completed"] %}
 
