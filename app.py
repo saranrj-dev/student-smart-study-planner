@@ -275,7 +275,7 @@ def dashboard():
     """)
     pending_assignments = cur.fetchall()
 
-    today = date.today().isoformat()
+    today = date.today()
 
     cur.execute("""
         SELECT *
@@ -284,7 +284,26 @@ def dashboard():
         ORDER BY exam_date
         LIMIT 5
     """, (today,))
+
     upcoming_exams = cur.fetchall()
+
+    # EXAM COUNTDOWN
+    for exam in upcoming_exams:
+
+        exam_day = exam["exam_date"]
+
+        if isinstance(exam_day, str):
+            exam_day = datetime.strptime(
+                exam_day,
+                "%Y-%m-%d"
+            ).date()
+
+        elif hasattr(exam_day, "date"):
+            exam_day = exam_day.date()
+
+        exam["days_left"] = (
+            exam_day - today
+        ).days
 
     cur.execute("""
         SELECT
@@ -310,7 +329,7 @@ def dashboard():
         pending_assignments=pending_assignments,
         upcoming_exams=upcoming_exams,
         progress=progress_data,
-        today=today
+        today=today.isoformat()
     )
 
 
