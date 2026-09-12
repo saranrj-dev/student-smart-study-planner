@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, session
-from datetime import date, datetime
+from datetime import date, datetime, timedeltatime
 import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -102,6 +102,12 @@ def init_db():
             topic TEXT NOT NULL,
             completed INTEGER DEFAULT 0
         )
+    """)
+
+    # STUDY STREAK
+    cur.execute("""
+        ALTER TABLE study_topics
+        ADD COLUMN IF NOT EXISTS completed_at DATE
     """)
 
     # PDF FILES
@@ -355,6 +361,31 @@ def dashboard():
 
     total_topics = cur.fetchone()["count"]
 
+    # TODAY
+    today = date.today()
+
+    # STUDY STREAK
+    cur.execute("""
+        SELECT DISTINCT completed_at
+        FROM study_topics
+        WHERE completed = 1
+        AND completed_at IS NOT NULL
+        ORDER BY completed_at DESC
+    """)
+    completed_dates = cur.fetchall()
+
+    completed_date_set = {
+        row["completed_at"] if not isinstance(row["completed_at"], str)
+        else datetime.strptime(row["completed_at"], "%Y-%m-%d").date()
+        for row in completed_dates
+    }
+
+    streak = 0
+    check_date = today
+    while check_date in completed_date_set:
+        streak += 1
+        check_date -= timedelta(days=1)
+
     # PENDING ASSIGNMENTS LIST
     cur.execute("""
         SELECT *
@@ -365,9 +396,6 @@ def dashboard():
     """)
 
     pending_assignments = cur.fetchall()
-
-    # TODAY
-    today = date.today()
 
     # UPCOMING EXAMS
     cur.execute("""
@@ -426,7 +454,8 @@ def dashboard():
         pending_assignments=pending_assignments,
         upcoming_exams=upcoming_exams,
         progress=progress_data,
-        today=today.isoformat()
+        today=today.isoformat(),
+        streak=streak
     )
 
 
@@ -941,14 +970,17 @@ def progress():
 
             if subject and topic:
 
+                completed_at = date.today() if completed else None
+
                 cur.execute("""
                     INSERT INTO study_topics
-                    (subject, topic, completed)
-                    VALUES (%s, %s, %s)
+                    (subject, topic, completed, completed_at)
+                    VALUES (%s, %s, %s, %s)
                 """, (
                     subject,
                     topic,
-                    completed
+                    completed,
+                    completed_at
                 ))
 
         conn.commit()
@@ -1025,9 +1057,10 @@ def update_progress(id):
 
     cur.execute("""
         UPDATE study_topics
-        SET completed = 1
+        SET completed = 1,
+            completed_at = %s
         WHERE id = %s
-    """, (id,))
+    """, (date.today(), id))
 
     conn.commit()
 
