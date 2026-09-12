@@ -27,6 +27,43 @@
         <a href="/alerts">🔔 Alerts</a>
         <a href="/logout">Logout</a>
     </div>
+    <!-- =========================
+     OVERALL PROGRESS
+========================= -->
+
+{% set overall_completed = progress | sum(attribute="completed") %}
+{% set overall_total = progress | sum(attribute="total") %}
+
+{% if overall_total > 0 %}
+    {% set overall_percentage =
+        ((overall_completed / overall_total) * 100)|round|int
+    %}
+{% else %}
+    {% set overall_percentage = 0 %}
+{% endif %}
+
+<div class="card">
+
+    <h2>📊 Overall Progress</h2>
+
+    <h1>{{ overall_percentage }}%</h1>
+
+    <div class="progress-bar">
+
+        <div
+            class="progress-fill"
+            style="width: {{ overall_percentage }}%;"
+        >
+        </div>
+
+    </div>
+
+    <p>
+        {{ overall_completed }} / {{ overall_total }}
+        Topics Completed
+    </p>
+
+</div>
 
 </nav>
 
