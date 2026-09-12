@@ -110,6 +110,15 @@ def init_db():
         ADD COLUMN IF NOT EXISTS completed_at DATE
     """)
 
+    # DAILY STUDY GOAL
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS daily_goals (
+            id SERIAL PRIMARY KEY,
+            username TEXT NOT NULL UNIQUE,
+            goal INTEGER DEFAULT 1
+        )
+    """)
+
     # PDF FILES
     cur.execute("""
         CREATE TABLE IF NOT EXISTS pdf_files (
@@ -132,14 +141,7 @@ def init_db():
 
     cur.close()
     conn.close()
-# DAILY STUDY GOAL
-cur.execute("""
-    CREATE TABLE IF NOT EXISTS daily_goals (
-        id SERIAL PRIMARY KEY,
-        username TEXT NOT NULL UNIQUE,
-        goal INTEGER DEFAULT 1
-    )
-""")
+
 
 init_db()
 
@@ -370,29 +372,6 @@ def dashboard():
 
     # TODAY
     today = date.today()
-    # DAILY STUDY GOAL
-cur.execute("""
-    SELECT goal
-    FROM daily_goals
-    WHERE username = %s
-""", (session["username"],))
-
-goal_data = cur.fetchone()
-
-if goal_data:
-    daily_goal = goal_data["goal"]
-else:
-    daily_goal = 1
-
-# TODAY COMPLETED TOPICS
-cur.execute("""
-    SELECT COUNT(*) AS count
-    FROM study_topics
-    WHERE completed = 1
-    AND completed_at = %s
-""", (today,))
-
-today_completed = cur.fetchone()["count"]
 
     # STUDY STREAK
     cur.execute("""
@@ -415,6 +394,26 @@ today_completed = cur.fetchone()["count"]
     while check_date in completed_date_set:
         streak += 1
         check_date -= timedelta(days=1)
+
+    # DAILY STUDY GOAL
+    cur.execute("""
+        SELECT goal
+        FROM daily_goals
+        WHERE username = %s
+    """, (session["username"],))
+
+    goal_data = cur.fetchone()
+    daily_goal = goal_data["goal"] if goal_data else 1
+
+    # TODAY COMPLETED TOPICS
+    cur.execute("""
+        SELECT COUNT(*) AS count
+        FROM study_topics
+        WHERE completed = 1
+        AND completed_at = %s
+    """, (today,))
+
+    today_completed = cur.fetchone()["count"]
 
     # PENDING ASSIGNMENTS LIST
     cur.execute("""
@@ -485,8 +484,48 @@ today_completed = cur.fetchone()["count"]
         upcoming_exams=upcoming_exams,
         progress=progress_data,
         today=today.isoformat(),
-        streak=streak
+        streak=streak,
+        daily_goal=daily_goal,
+        today_completed=today_completed
     )
+
+
+# ================= DAILY STUDY GOAL =================
+
+@app.route("/daily_goal", methods=["POST"])
+def daily_goal():
+
+    if "username" not in session:
+
+        return redirect("/login")
+
+    try:
+        goal = int(request.form.get("goal", 1))
+    except ValueError:
+        goal = 1
+
+    if goal < 1:
+        goal = 1
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("""
+        INSERT INTO daily_goals (username, goal)
+        VALUES (%s, %s)
+        ON CONFLICT (username)
+        DO UPDATE SET goal = EXCLUDED.goal
+    """, (
+        session["username"],
+        goal
+    ))
+
+    conn.commit()
+
+    cur.close()
+    conn.close()
+
+    return redirect("/dashboard")
 
 
 # ================= SUBJECTS =================
