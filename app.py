@@ -132,7 +132,14 @@ def init_db():
 
     cur.close()
     conn.close()
-
+# DAILY STUDY GOAL
+cur.execute("""
+    CREATE TABLE IF NOT EXISTS daily_goals (
+        id SERIAL PRIMARY KEY,
+        username TEXT NOT NULL UNIQUE,
+        goal INTEGER DEFAULT 1
+    )
+""")
 
 init_db()
 
@@ -363,6 +370,29 @@ def dashboard():
 
     # TODAY
     today = date.today()
+    # DAILY STUDY GOAL
+cur.execute("""
+    SELECT goal
+    FROM daily_goals
+    WHERE username = %s
+""", (session["username"],))
+
+goal_data = cur.fetchone()
+
+if goal_data:
+    daily_goal = goal_data["goal"]
+else:
+    daily_goal = 1
+
+# TODAY COMPLETED TOPICS
+cur.execute("""
+    SELECT COUNT(*) AS count
+    FROM study_topics
+    WHERE completed = 1
+    AND completed_at = %s
+""", (today,))
+
+today_completed = cur.fetchone()["count"]
 
     # STUDY STREAK
     cur.execute("""
