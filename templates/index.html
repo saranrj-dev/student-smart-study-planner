@@ -1,22 +1,41 @@
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-    <title>Student Smart Study Planner</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>StudyFlow — Student Smart Study Planner</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:#f6f8fc;color:#172033}a{text-decoration:none;color:inherit}
+.nav{height:72px;display:flex;align-items:center;justify-content:space-between;padding:0 7%;background:#fff;border-bottom:1px solid #e8ebf2;position:sticky;top:0;z-index:5}
+.logo{font-weight:800;font-size:20px;display:flex;gap:10px;align-items:center}.logo span{background:#4f46e5;color:#fff;width:38px;height:38px;border-radius:12px;display:grid;place-items:center}
+.navlinks{display:flex;gap:12px;align-items:center}.navlinks a{padding:10px 16px;border-radius:10px;font-weight:650;color:#4b5563}.navlinks .primary{background:#4f46e5;color:#fff}
+.hero{padding:76px 7% 50px;background:linear-gradient(135deg,#eef2ff,#fff 55%,#ecfeff)}.heroGrid{max-width:1180px;margin:auto;display:grid;grid-template-columns:1.1fr .9fr;gap:55px;align-items:center}
+.badge{display:inline-flex;background:#e0e7ff;color:#4338ca;padding:8px 12px;border-radius:999px;font-weight:700;font-size:13px}h1{font-size:clamp(40px,6vw,68px);line-height:1.02;margin:18px 0}
+.hero p{font-size:19px;color:#667085;max-width:600px;line-height:1.6}.actions{display:flex;gap:12px;margin-top:28px;flex-wrap:wrap}.btn{padding:14px 20px;border-radius:12px;font-weight:750;border:1px solid #dbe0ea;background:#fff}.btn.primary{background:#4f46e5;color:#fff;border-color:#4f46e5}
+.preview{background:#111827;border-radius:24px;padding:18px;box-shadow:0 25px 70px #4338ca22}.dash{background:#f8fafc;border-radius:16px;padding:18px}.dashTop{display:flex;justify-content:space-between;align-items:center}.avatar{width:38px;height:38px;border-radius:50%;background:#c7d2fe;display:grid;place-items:center}
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:16px}.card{background:#fff;padding:15px;border-radius:14px;border:1px solid #e9edf5}.num{font-size:25px;font-weight:800}.small{font-size:12px;color:#7b8495}
+.section{padding:68px 7%}.section h2{text-align:center;font-size:34px;margin:0 0 10px}.sub{text-align:center;color:#697386;margin:0 auto 35px;max-width:650px}
+.features{max-width:1100px;margin:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.feature{background:#fff;padding:25px;border:1px solid #e7eaf1;border-radius:18px}.icon{font-size:28px}.feature h3{margin:12px 0 8px}.feature p{color:#687386;line-height:1.55}
+.cta{max-width:1100px;margin:auto;background:#111827;color:#fff;border-radius:24px;padding:45px;text-align:center}.cta h2{margin:0 0 10px}.cta p{color:#c7cfdd}.footer{text-align:center;padding:28px;color:#8a93a3;font-size:13px}
+@media(max-width:850px){.heroGrid{grid-template-columns:1fr}.preview{max-width:600px}.features{grid-template-columns:1fr 1fr}.navlinks a:not(.primary){display:none}}
+@media(max-width:560px){.hero{padding-top:50px}.features{grid-template-columns:1fr}.nav{padding:0 5%}.hero,.section{padding-left:5%;padding-right:5%}h1{font-size:45px}}
+</style>
 </head>
-
 <body>
-
-<div class="hero">
-
-    <h1>🎓 Student Smart Study Planner</h1>
-
-    <p>Plan Your Study. Track Your Progress.</p>
-
-    <a href="/login" class="btn">Login</a>
-
-    <a href="/signup" class="btn">Get Started</a>
-
-</div>
-
-</body>
-</html>
+<nav class="nav"><a class="logo" href="/"><span>🎓</span> StudyFlow</a><div class="navlinks"><a href="#features">Features</a><a href="/login">Login</a><a class="primary" href="/signup">Get Started</a></div></nav>
+<section class="hero"><div class="heroGrid"><div><div class="badge">✨ Built for students</div><h1>Study smarter.<br>Stay on track.</h1><p>One simple place to manage subjects, assignments, exams, timetable, study topics and progress — without the stress of keeping everything in your head.</p><div class="actions"><a class="btn primary" href="/signup">Create Free Account →</a><a class="btn" href="/login">I already have an account</a></div></div>
+<div class="preview"><div class="dash"><div class="dashTop"><div><b>Good morning 👋</b><div class="small">Your study overview</div></div><div class="avatar">S</div></div><div class="cards"><div class="card"><div class="small">Subjects</div><div class="num">6</div></div><div class="card"><div class="small">Assignments</div><div class="num">3</div></div><div class="card"><div class="small">Exams</div><div class="num">2</div></div><div class="card"><div class="small">Progress</div><div class="num">72%</div></div></div><div class="card" style="margin-top:10px"><b>🔥 5 day streak</b><div class="small" style="margin-top:5px">Keep going — consistency wins.</div></div></div></div></div></section>
+<section class="section" id="features"><h2>Everything you need to study</h2><p class="sub">Designed around the features already planned for your Student Smart Study Planner.</p><div class="features">
+<div class="feature"><div class="icon">📚</div><h3>Subjects</h3><p>Add and organize all your college subjects in one place.</p></div>
+<div class="feature"><div class="icon">📝</div><h3>Assignments</h3><p>Track work, due dates and completion so nothing gets missed.</p></div>
+<div class="feature"><div class="icon">📅</div><h3>Exams</h3><p>Store exam dates and see upcoming exams at a glance.</p></div>
+<div class="feature"><div class="icon">⏰</div><h3>Timetable</h3><p>Plan study sessions with date, time and topic.</p></div>
+<div class="feature"><div class="icon">📈</div><h3>Progress</h3><p>Complete topics and see subject-wise and overall progress.</p></div>
+<div class="feature"><div class="icon">🔔</div><h3>Alerts</h3><p>See important assignment, exam and today's timetable reminders.</p></div>
+<div class="feature"><div class="icon">📄</div><h3>Notes & PDFs</h3><p>Keep study PDF notes connected to your planner.</p></div>
+<div class="feature"><div class="icon">🎯</div><h3>Daily Goal</h3><p>Set a daily study target and track today's completion.</p></div>
+<div class="feature"><div class="icon">🌙</div><h3>Dark Mode</h3><p>Switch to a comfortable dark interface whenever you want.</p></div>
+</div></section>
+<section class="section" style="padding-top:0"><div class="cta"><h2>Ready to organize your semester?</h2><p>Start with your subjects and build your study plan step by step.</p><div class="actions" style="justify-content:center"><a class="btn primary" href="/signup">Get Started →</a></div></div></section>
+<footer class="footer">Student Smart Study Planner • StudyFlow</footer>
+</body></html>
