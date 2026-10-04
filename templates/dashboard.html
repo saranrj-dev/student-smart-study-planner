@@ -4,6 +4,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .todo-btn {
+            display: inline-block;
+            padding: 10px 16px;
+            margin: 5px;
+            background: #22c55e;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .todo-btn:hover {
+            opacity: 0.9;
+        }
+
+        .success {
+            color: #22c55e;
+            font-weight: bold;
+        }
+
+        .quick-actions {
+            margin: 25px 0;
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            text-align: left;
+        }
+    </style>
 </head>
 
 <body>
@@ -20,6 +59,7 @@
         <a href="/progress">Progress</a>
         <a href="/alerts">🔔 Alerts</a>
         <a href="/pdfs">📚 Notes</a>
+        <a href="/todo" class="todo-btn">📝 To-Do List</a>
 
         <button class="dark-mode-btn" onclick="toggleDarkMode()">
             🌙 Dark Mode
@@ -78,7 +118,7 @@
                         type="number"
                         name="goal"
                         min="1"
-                        value="{{ daily_goal if daily_goal > 0 else "" }}"
+                        value="{{ daily_goal }}"
                         required
                     >
                     <button type="submit">Set Goal</button>
@@ -88,10 +128,22 @@
 
     </div>
 
+    <div class="card quick-actions">
+        <h2>⚡ Quick Actions</h2>
+        <p>Quickly access your study tools.</p>
+
+        <a href="/todo" class="todo-btn">📝 Open To-Do List</a>
+        <a href="/subjects" class="todo-btn">📚 Subjects</a>
+        <a href="/assignments" class="todo-btn">📝 Assignments</a>
+        <a href="/exams" class="todo-btn">📅 Exams</a>
+        <a href="/timetable" class="todo-btn">🕐 Timetable</a>
+        <a href="/progress" class="todo-btn">📈 Progress</a>
+        <a href="/pdfs" class="todo-btn">📚 Notes</a>
+    </div>
+
     <h2>📝 Pending Assignments</h2>
 
     {% if pending_assignments %}
-
         <table>
             <tr>
                 <th>Subject</th>
@@ -107,7 +159,6 @@
             </tr>
             {% endfor %}
         </table>
-
     {% else %}
         <p>No pending assignments 🎉</p>
     {% endif %}
@@ -115,7 +166,6 @@
     <h2>📅 Exams</h2>
 
     {% if upcoming_exams %}
-
         <table>
             <tr>
                 <th>Subject</th>
@@ -139,7 +189,6 @@
             </tr>
             {% endfor %}
         </table>
-
     {% else %}
         <p>No upcoming exams.</p>
     {% endif %}
