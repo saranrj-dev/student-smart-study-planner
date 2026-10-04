@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Dashboard</title>
 
     <link rel="stylesheet"
@@ -9,41 +11,79 @@
 
     <style>
 
-        /* ==============================
+        /* =========================================
            TODO BUTTON
-        ============================== */
+        ========================================= */
 
         .todo-btn {
             display: inline-block;
+            padding: 10px 16px;
+            margin: 5px;
             background: #22c55e;
             color: white;
-            padding: 9px 14px;
-            border-radius: 8px;
             text-decoration: none;
+            border-radius: 8px;
             font-weight: bold;
-            margin-left: 5px;
         }
 
         .todo-btn:hover {
             opacity: 0.9;
         }
 
-        /* ==============================
-           SUCCESS TEXT
-        ============================== */
+
+        /* =========================================
+           QUICK ACTIONS
+        ========================================= */
+
+        .quick-actions {
+            margin: 25px 0;
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+
+        /* =========================================
+           SUCCESS MESSAGE
+        ========================================= */
 
         .success {
             color: #22c55e;
+            font-weight: bold;
+        }
+
+
+        /* =========================================
+           TABLE
+        ========================================= */
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            text-align: left;
         }
 
     </style>
+
 </head>
 
+
 <body>
+
+
+<!-- =========================================
+     NAVIGATION
+========================================= -->
 
 <nav>
 
     <h2>🎓 Study Planner</h2>
+
 
     <div>
 
@@ -51,43 +91,51 @@
             Dashboard
         </a>
 
+
         <a href="/subjects">
             Subjects
         </a>
+
 
         <a href="/assignments">
             Assignments
         </a>
 
+
         <a href="/exams">
             Exams
         </a>
+
 
         <a href="/timetable">
             Timetable
         </a>
 
+
         <a href="/progress">
             Progress
         </a>
 
+
         <a href="/alerts">
             🔔 Alerts
         </a>
-       <a href="/todo" class="todo-btn">
-    📝 To-Do List
-</a>
+
 
         <a href="/pdfs">
             📚 Notes
         </a>
 
-        <!-- NEW TODO BUTTON -->
+
+        <!-- TO-DO BUTTON -->
 
         <a href="/todo"
            class="todo-btn">
+
             📝 To-Do List
+
         </a>
+
 
         <button
             class="dark-mode-btn"
@@ -96,6 +144,7 @@
             🌙 Dark Mode
 
         </button>
+
 
         <a href="/logout">
             Logout
@@ -106,16 +155,23 @@
 </nav>
 
 
+
+<!-- =========================================
+     MAIN
+========================================= -->
+
 <div class="main">
+
 
     <h1>
         Welcome, {{ username }} 👋
     </h1>
 
 
-    <!-- =========================
+
+    <!-- =====================================
          DASHBOARD CARDS
-    ========================== -->
+    ====================================== -->
 
     <div class="cards">
 
@@ -137,6 +193,7 @@
         </div>
 
 
+
         <!-- ASSIGNMENTS -->
 
         <div class="card">
@@ -152,6 +209,7 @@
             </p>
 
         </div>
+
 
 
         <!-- EXAMS -->
@@ -171,6 +229,7 @@
         </div>
 
 
+
         <!-- TOPICS -->
 
         <div class="card">
@@ -182,12 +241,15 @@
             </h3>
 
             <p>
+
                 {{ completed_topics }}
                 /
                 {{ total_topics }}
+
             </p>
 
         </div>
+
 
 
         <!-- STUDY STREAK -->
@@ -209,6 +271,7 @@
             </p>
 
         </div>
+
 
 
         <!-- DAILY GOAL -->
@@ -233,29 +296,30 @@
             {% if daily_goal > 0
                   and today_completed >= daily_goal %}
 
+
                 <strong class="success">
 
                     🎉 Goal Completed!
 
                 </strong>
 
+
             {% else %}
+
 
                 <form
                     action="/daily_goal"
                     method="POST">
 
+
                     <input
                         type="number"
                         name="goal"
                         min="1"
-                        value="{{
-                            daily_goal
-                            if daily_goal > 0
-                            else ''
-                        }}"
+                        value="{{ daily_goal }}"
                         required
                     >
+
 
                     <button type="submit">
 
@@ -263,44 +327,106 @@
 
                     </button>
 
+
                 </form>
+
 
             {% endif %}
 
         </div>
 
+
     </div>
 
 
-    <!-- =========================
-         TODO QUICK ACCESS
-    ========================== -->
 
-    <div class="card"
-         style="margin-top: 20px;">
+    <!-- =====================================
+         QUICK ACTIONS
+    ====================================== -->
+
+    <div class="card quick-actions">
+
 
         <h2>
-            📝 To-Do List
+            ⚡ Quick Actions
         </h2>
 
+
         <p>
-            Manage your tasks, due time,
-            reminders and completion.
+            Quickly access your study tools.
         </p>
 
-        <a href="/todo"
-           class="todo-btn">
 
-            ➕ Open To-Do List
+        <a
+            href="/todo"
+            class="todo-btn">
+
+            📝 Open To-Do List
 
         </a>
 
+
+        <a
+            href="/subjects"
+            class="todo-btn">
+
+            📚 Subjects
+
+        </a>
+
+
+        <a
+            href="/assignments"
+            class="todo-btn">
+
+            📝 Assignments
+
+        </a>
+
+
+        <a
+            href="/exams"
+            class="todo-btn">
+
+            📅 Exams
+
+        </a>
+
+
+        <a
+            href="/timetable"
+            class="todo-btn">
+
+            🕐 Timetable
+
+        </a>
+
+
+        <a
+            href="/progress"
+            class="todo-btn">
+
+            📈 Progress
+
+        </a>
+
+
+        <a
+            href="/pdfs"
+            class="todo-btn">
+
+            📚 Notes
+
+        </a>
+
+
     </div>
 
 
-    <!-- =========================
+
+    <!-- =====================================
          PENDING ASSIGNMENTS
-    ========================== -->
+    ====================================== -->
 
     <h2>
         📝 Pending Assignments
@@ -311,6 +437,7 @@
 
 
         <table>
+
 
             <tr>
 
@@ -329,7 +456,9 @@
             </tr>
 
 
+
             {% for item in pending_assignments %}
+
 
             <tr>
 
@@ -337,9 +466,11 @@
                     {{ item["subject"] }}
                 </td>
 
+
                 <td>
                     {{ item["title"] }}
                 </td>
+
 
                 <td>
                     {{ item["due_date"] }}
@@ -347,23 +478,28 @@
 
             </tr>
 
+
             {% endfor %}
+
 
         </table>
 
 
     {% else %}
 
+
         <p>
             No pending assignments 🎉
         </p>
 
+
     {% endif %}
 
 
-    <!-- =========================
+
+    <!-- =====================================
          EXAMS
-    ========================== -->
+    ====================================== -->
 
     <h2>
         📅 Exams
@@ -374,6 +510,7 @@
 
 
         <table>
+
 
             <tr>
 
@@ -392,7 +529,9 @@
             </tr>
 
 
+
             {% for exam in upcoming_exams %}
+
 
             <tr>
 
@@ -400,14 +539,17 @@
                     {{ exam["subject"] }}
                 </td>
 
+
                 <td>
                     {{ exam["exam_date"] }}
                 </td>
+
 
                 <td>
 
 
                     {% if exam["days_left"] == 0 %}
+
 
                         🔥
 
@@ -418,6 +560,7 @@
 
                     {% elif exam["days_left"] == 1 %}
 
+
                         ⏳
 
                         <strong>
@@ -426,6 +569,7 @@
 
 
                     {% else %}
+
 
                         ⏳
 
@@ -437,6 +581,7 @@
 
                         </strong>
 
+
                     {% endif %}
 
 
@@ -444,29 +589,37 @@
 
             </tr>
 
+
             {% endfor %}
+
 
         </table>
 
 
     {% else %}
 
+
         <p>
             No upcoming exams.
         </p>
 
+
     {% endif %}
+
 
 </div>
 
 
+
+<!-- =========================================
+     DARK MODE SCRIPT
+========================================= -->
+
 <script>
 
-/* =====================================
-   DARK MODE
-===================================== */
 
 function toggleDarkMode() {
+
 
     document.body.classList.toggle(
         "dark-mode"
@@ -479,30 +632,30 @@ function toggleDarkMode() {
         )
     ) {
 
+
         localStorage.setItem(
             "darkMode",
             "enabled"
         );
 
-    }
 
-    else {
+    } else {
+
 
         localStorage.setItem(
             "darkMode",
             "disabled"
         );
 
+
     }
 
 }
 
 
-/* =====================================
-   LOAD DARK MODE
-===================================== */
 
 window.onload = function() {
+
 
     if (
         localStorage.getItem(
@@ -510,16 +663,20 @@ window.onload = function() {
         ) === "enabled"
     ) {
 
+
         document.body.classList.add(
             "dark-mode"
         );
+
 
     }
 
 };
 
+
 </script>
 
 
 </body>
+
 </html>
