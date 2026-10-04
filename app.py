@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, session
 from datetime import date, datetime, timedelta
 import os
+import tempfile
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import cloudinary
@@ -1181,13 +1182,20 @@ def pdfs():
         )
 
         # UPLOAD TO CLOUDINARY
-        result = cloudinary.uploader.upload_large(
-            pdf,
-            resource_type="raw",
-            folder="student-study-planner/pdfs",
-            chunk_size=20 * 1024 * 1024
-        )
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp:
+    pdf.save(temp.name)
+    temp_path = temp.name
 
+try:
+    result = cloudinary.uploader.upload_large(
+        temp_path,
+        resource_type="raw",
+        folder="student-study-planner/pdfs",
+        chunk_size=20 * 1024 * 1024
+    )
+finally:
+    if os.path.exists(temp_path):
+        os.remove(temp_path)
         filepath = result["secure_url"]
 
         public_id = result["public_id"]
