@@ -7,8 +7,10 @@ import cloudinary
 import cloudinary.uploader
 from werkzeug.utils import secure_filename
 
+
 app = Flask(__name__)
 app.secret_key = "student-study-planner-secret"
+app.config["MAX_CONTENT_LENGTH"] = 500 * 1024 * 1024
 
 
 # ================= CLOUDINARY =================
@@ -115,7 +117,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS daily_goals (
             id SERIAL PRIMARY KEY,
             username TEXT NOT NULL UNIQUE,
-            goal INTEGER DEFAULT 0
+            goal INTEGER DEFAULT 1
         )
     """)
 
@@ -403,7 +405,7 @@ def dashboard():
     """, (session["username"],))
 
     goal_data = cur.fetchone()
-    daily_goal = goal_data["goal"] if goal_data else 0
+    daily_goal = goal_data["goal"] if goal_data else 1
 
     # TODAY COMPLETED TOPICS
     cur.execute("""
@@ -500,9 +502,9 @@ def daily_goal():
         return redirect("/login")
 
     try:
-        goal = int(request.form.get("goal", 0))
+        goal = int(request.form.get("goal", 1))
     except ValueError:
-        goal = 0
+        goal = 1
 
     if goal < 1:
         goal = 1
@@ -1179,10 +1181,11 @@ def pdfs():
         )
 
         # UPLOAD TO CLOUDINARY
-        result = cloudinary.uploader.upload(
+        result = cloudinary.uploader.upload_large(
             pdf,
             resource_type="raw",
-            folder="student-study-planner/pdfs"
+            folder="student-study-planner/pdfs",
+            chunk_size=20 * 1024 * 1024
         )
 
         filepath = result["secure_url"]
