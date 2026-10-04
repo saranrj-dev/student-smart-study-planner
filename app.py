@@ -68,6 +68,7 @@ def get_b2_client():
     return boto3.client(
         "s3",
         endpoint_url=B2_ENDPOINT,
+        region_name="us-east-005",
         aws_access_key_id=B2_KEY_ID,
         aws_secret_access_key=B2_APPLICATION_KEY
     )
