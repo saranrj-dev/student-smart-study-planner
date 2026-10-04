@@ -1183,19 +1183,20 @@ def pdfs():
 
         # UPLOAD TO CLOUDINARY
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp:
-    pdf.save(temp.name)
-    temp_path = temp.name
+            pdf.save(temp.name)
+            temp_path = temp.name
 
-try:
-    result = cloudinary.uploader.upload_large(
-        temp_path,
-        resource_type="raw",
-        folder="student-study-planner/pdfs",
-        chunk_size=20 * 1024 * 1024
-    )
-finally:
-    if os.path.exists(temp_path):
-        os.remove(temp_path)
+        try:
+            result = cloudinary.uploader.upload_large(
+                temp_path,
+                resource_type="raw",
+                folder="student-study-planner/pdfs",
+                chunk_size=20 * 1024 * 1024
+            )
+        finally:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+
         filepath = result["secure_url"]
 
         public_id = result["public_id"]
