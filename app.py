@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session
+from flask import Flask, render_template, render_template_string, request, redirect, session, jsonify
 from datetime import date, datetime, timedelta
 import os
 import tempfile
@@ -66,12 +66,11 @@ def get_b2_client():
         raise Exception("B2_ENDPOINT is not configured.")
 
     return boto3.client(
-    "s3",
-    endpoint_url=B2_ENDPOINT,
-    region_name="us-east-005",
-    aws_access_key_id=B2_KEY_ID,
-    aws_secret_access_key=B2_APPLICATION_KEY
-)
+        "s3",
+        endpoint_url=B2_ENDPOINT,
+        aws_access_key_id=B2_KEY_ID,
+        aws_secret_access_key=B2_APPLICATION_KEY
+    )
 
 
 # Multipart upload configuration
@@ -245,6 +244,28 @@ def init_db():
     cur.execute("""
         ALTER TABLE study_topics
         ADD COLUMN IF NOT EXISTS username TEXT
+    """)
+
+    # =====================================================
+    # TO-DO LIST
+    # =====================================================
+
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS todos (
+            id SERIAL PRIMARY KEY,
+            username TEXT NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT,
+            due_datetime TIMESTAMP,
+            completed INTEGER DEFAULT 0,
+            notified INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    cur.execute("""
+        ALTER TABLE todos
+        ADD COLUMN IF NOT EXISTS notified INTEGER DEFAULT 0
     """)
 
     conn.commit()
@@ -1887,6 +1908,1057 @@ def alerts():
         exams=alert_exams,
         timetable=alert_timetable
     )
+
+
+# =========================================================
+# TO-DO LIST
+# =========================================================
+
+TODO_PAGE = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>To-Do List</title>
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #0f1115;
+    color: white;
+}
+
+.container {
+    max-width: 900px;
+    margin: auto;
+    padding: 25px;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.header h1 {
+    margin: 0;
+}
+
+.back {
+    color: white;
+    text-decoration: none;
+    background: #252a34;
+    padding: 10px 15px;
+    border-radius: 8px;
+}
+
+.card {
+    background: #181c24;
+    padding: 20px;
+    border-radius: 14px;
+    margin-bottom: 20px;
+}
+
+input,
+textarea {
+    width: 100%;
+    padding: 12px;
+    margin-top: 8px;
+    margin-bottom: 15px;
+    background: #0f1115;
+    border: 1px solid #333;
+    color: white;
+    border-radius: 8px;
+}
+
+textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+button {
+    border: none;
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-right: 5px;
+}
+
+.add-btn {
+    background: #22c55e;
+    color: white;
+}
+
+.complete-btn {
+    background: #3b82f6;
+    color: white;
+}
+
+.edit-btn {
+    background: #f59e0b;
+    color: white;
+}
+
+.delete-btn {
+    background: #ef4444;
+    color: white;
+}
+
+.todo {
+    background: #202631;
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+}
+
+.todo.completed {
+    opacity: 0.55;
+}
+
+.todo.completed .title {
+    text-decoration: line-through;
+}
+
+.title {
+    font-size: 19px;
+    font-weight: bold;
+    margin-bottom: 7px;
+}
+
+.description {
+    color: #bbb;
+    margin-bottom: 10px;
+    white-space: pre-wrap;
+}
+
+.due {
+    color: #fbbf24;
+    margin-bottom: 12px;
+}
+
+.status {
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+
+.empty {
+    text-align: center;
+    color: #aaa;
+    padding: 30px;
+}
+
+.setting {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.setting input {
+    width: auto;
+    margin: 0;
+}
+
+.actions form {
+    display: inline;
+}
+
+a.action-link {
+    text-decoration: none;
+}
+
+@media (max-width: 600px) {
+    .container {
+        padding: 15px;
+    }
+
+    .header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="header">
+
+<h1>📝 To-Do List</h1>
+
+<a href="/dashboard" class="back">
+Dashboard
+</a>
+
+</div>
+
+<!-- ADD TODO -->
+<div class="card">
+
+<h2>Add To-Do</h2>
+
+<form method="POST" action="/todo/add">
+
+<label>Task</label>
+
+<input
+    type="text"
+    name="title"
+    placeholder="Example: Complete Python assignment"
+    required
+>
+
+<label>Description</label>
+
+<textarea
+    name="description"
+    placeholder="Optional"
+></textarea>
+
+<label>Due Date & Time</label>
+
+<input
+    type="datetime-local"
+    name="due_datetime"
+>
+
+<button class="add-btn" type="submit">
+➕ Add To-Do
+</button>
+
+</form>
+
+</div>
+
+<!-- SETTINGS -->
+<div class="card">
+
+<h3>🔔 Reminder Settings</h3>
+
+<div class="setting">
+
+<input
+    type="checkbox"
+    id="vibrationToggle"
+    checked
+>
+
+<label for="vibrationToggle">
+Enable vibration
+</label>
+
+</div>
+
+<br>
+
+<button
+    type="button"
+    class="complete-btn"
+    onclick="enableNotifications()"
+>
+🔔 Enable Notifications
+</button>
+
+<p style="color:#aaa;font-size:13px;margin-bottom:0;">
+Keep this To-Do page open for browser reminders. Android native reminders can be added later.
+</p>
+
+</div>
+
+<!-- TODO LIST -->
+<div class="card">
+
+<h2>My Tasks</h2>
+
+<div id="todoList">
+
+{% if todos %}
+
+{% for todo in todos %}
+
+<div
+    class="todo {% if todo.completed %}completed{% endif %}"
+    id="todo-{{ todo.id }}"
+>
+
+<div class="title">
+{{ todo.title }}
+</div>
+
+{% if todo.description %}
+
+<div class="description">
+{{ todo.description }}
+</div>
+
+{% endif %}
+
+{% if todo.due_datetime %}
+
+<div class="due">
+
+⏰ Due:
+{{ todo.due_datetime.strftime('%d-%m-%Y %I:%M %p') if todo.due_datetime.strftime else todo.due_datetime }}
+
+</div>
+
+{% endif %}
+
+<div class="status">
+
+{% if todo.completed %}
+
+✅ Completed
+
+{% else %}
+
+⏳ Pending
+
+{% endif %}
+
+</div>
+
+<div class="actions">
+
+{% if not todo.completed %}
+
+<form
+    method="POST"
+    action="/todo/complete/{{ todo.id }}"
+>
+
+<button class="complete-btn" type="submit">
+✅ Complete
+</button>
+
+</form>
+
+{% endif %}
+
+<a
+    class="action-link"
+    href="/todo/edit/{{ todo.id }}"
+>
+
+<button
+    type="button"
+    class="edit-btn"
+>
+✏️ Edit
+</button>
+
+</a>
+
+<form
+    method="POST"
+    action="/todo/delete/{{ todo.id }}"
+    onsubmit="return confirm('Delete this task?')"
+>
+
+<button class="delete-btn" type="submit">
+🗑️ Delete
+</button>
+
+</form>
+
+</div>
+
+</div>
+
+{% endfor %}
+
+{% else %}
+
+<div class="empty">
+No To-Do tasks yet.
+</div>
+
+{% endif %}
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+let vibrationEnabled =
+    localStorage.getItem("todoVibration") !== "false";
+
+const vibrationToggle =
+    document.getElementById("vibrationToggle");
+
+vibrationToggle.checked = vibrationEnabled;
+
+vibrationToggle.addEventListener("change", function() {
+
+    vibrationEnabled = this.checked;
+
+    localStorage.setItem(
+        "todoVibration",
+        vibrationEnabled ? "true" : "false"
+    );
+
+});
+
+
+async function enableNotifications() {
+
+    if (!("Notification" in window)) {
+
+        alert("This browser does not support notifications.");
+        return;
+
+    }
+
+    try {
+
+        const permission =
+            await Notification.requestPermission();
+
+        if (permission === "granted") {
+
+            alert("Notifications enabled successfully!");
+
+            new Notification(
+                "Student Smart Study Planner",
+                {
+                    body: "Reminder notifications are enabled."
+                }
+            );
+
+        } else {
+
+            alert("Notification permission denied.");
+
+        }
+
+    } catch (error) {
+
+        console.log("Notification permission error:", error);
+        alert("Could not enable notifications in this browser.");
+
+    }
+
+}
+
+
+function playAlarm() {
+
+    try {
+
+        const AudioContext =
+            window.AudioContext ||
+            window.webkitAudioContext;
+
+        if (!AudioContext) {
+            return;
+        }
+
+        const audioContext = new AudioContext();
+
+        const oscillator =
+            audioContext.createOscillator();
+
+        const gain =
+            audioContext.createGain();
+
+        oscillator.type = "sine";
+        oscillator.frequency.value = 900;
+        gain.gain.value = 0.25;
+
+        oscillator.connect(gain);
+        gain.connect(audioContext.destination);
+        oscillator.start();
+
+        setTimeout(function() {
+
+            oscillator.stop();
+            audioContext.close();
+
+        }, 1000);
+
+    } catch (error) {
+
+        console.log("Alarm sound error:", error);
+
+    }
+
+}
+
+
+function vibratePhone() {
+
+    if (
+        vibrationEnabled &&
+        navigator.vibrate
+    ) {
+
+        navigator.vibrate([
+            500,
+            300,
+            500,
+            300,
+            800
+        ]);
+
+    }
+
+}
+
+
+async function checkTodoReminders() {
+
+    try {
+
+        const response =
+            await fetch("/todo/reminders", {
+                cache: "no-store"
+            });
+
+        if (!response.ok) {
+            return;
+        }
+
+        const data =
+            await response.json();
+
+        if (!data.reminders) {
+            return;
+        }
+
+        for (const reminder of data.reminders) {
+
+            playAlarm();
+            vibratePhone();
+
+            if (
+                "Notification" in window &&
+                Notification.permission === "granted"
+            ) {
+
+                new Notification(
+                    "⏰ To-Do Reminder",
+                    {
+                        body: reminder.title + " is due now!",
+                        requireInteraction: true
+                    }
+                );
+
+            } else {
+
+                alert(
+                    "⏰ Reminder: " +
+                    reminder.title
+                );
+
+            }
+
+        }
+
+    } catch (error) {
+
+        console.log(
+            "Reminder check error:",
+            error
+        );
+
+    }
+
+}
+
+setInterval(
+    checkTodoReminders,
+    10000
+);
+
+checkTodoReminders();
+
+</script>
+
+</body>
+</html>
+"""
+
+
+# =========================================================
+# TODO HOME
+# =========================================================
+
+@app.route("/todo")
+def todo():
+
+    if "username" not in session:
+        return redirect("/login")
+
+    username = session["username"]
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT *
+        FROM todos
+        WHERE username = %s
+        ORDER BY
+            completed ASC,
+            due_datetime ASC NULLS LAST,
+            id DESC
+    """, (username,))
+
+    todos = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    return render_template_string(
+        TODO_PAGE,
+        todos=todos
+    )
+
+
+# =========================================================
+# ADD TODO
+# =========================================================
+
+@app.route("/todo/add", methods=["POST"])
+def add_todo():
+
+    if "username" not in session:
+        return redirect("/login")
+
+    username = session["username"]
+
+    title = request.form.get(
+        "title",
+        ""
+    ).strip()
+
+    description = request.form.get(
+        "description",
+        ""
+    ).strip()
+
+    due_datetime_text = request.form.get(
+        "due_datetime",
+        ""
+    ).strip()
+
+    if not title:
+        return "Task title is required."
+
+    due_datetime = None
+
+    if due_datetime_text:
+
+        try:
+            due_datetime = datetime.strptime(
+                due_datetime_text,
+                "%Y-%m-%dT%H:%M"
+            )
+        except ValueError:
+            return "Invalid date/time."
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("""
+        INSERT INTO todos
+        (
+            username,
+            title,
+            description,
+            due_datetime,
+            completed,
+            notified
+        )
+        VALUES
+        (
+            %s,
+            %s,
+            %s,
+            %s,
+            0,
+            0
+        )
+    """, (
+        username,
+        title,
+        description,
+        due_datetime
+    ))
+
+    conn.commit()
+
+    cur.close()
+    conn.close()
+
+    return redirect("/todo")
+
+
+# =========================================================
+# COMPLETE TODO
+# =========================================================
+
+@app.route("/todo/complete/<int:todo_id>", methods=["POST"])
+def complete_todo(todo_id):
+
+    if "username" not in session:
+        return redirect("/login")
+
+    username = session["username"]
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("""
+        UPDATE todos
+        SET completed = 1
+        WHERE id = %s
+        AND username = %s
+    """, (
+        todo_id,
+        username
+    ))
+
+    conn.commit()
+
+    cur.close()
+    conn.close()
+
+    return redirect("/todo")
+
+
+# =========================================================
+# DELETE TODO
+# =========================================================
+
+@app.route("/todo/delete/<int:todo_id>", methods=["POST"])
+def delete_todo(todo_id):
+
+    if "username" not in session:
+        return redirect("/login")
+
+    username = session["username"]
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("""
+        DELETE FROM todos
+        WHERE id = %s
+        AND username = %s
+    """, (
+        todo_id,
+        username
+    ))
+
+    conn.commit()
+
+    cur.close()
+    conn.close()
+
+    return redirect("/todo")
+
+
+# =========================================================
+# EDIT TODO
+# =========================================================
+
+@app.route("/todo/edit/<int:todo_id>", methods=["GET", "POST"])
+def edit_todo(todo_id):
+
+    if "username" not in session:
+        return redirect("/login")
+
+    username = session["username"]
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    if request.method == "POST":
+
+        title = request.form.get(
+            "title",
+            ""
+        ).strip()
+
+        description = request.form.get(
+            "description",
+            ""
+        ).strip()
+
+        due_datetime_text = request.form.get(
+            "due_datetime",
+            ""
+        ).strip()
+
+        if not title:
+
+            cur.close()
+            conn.close()
+            return "Task title is required."
+
+        due_datetime = None
+
+        if due_datetime_text:
+
+            try:
+                due_datetime = datetime.strptime(
+                    due_datetime_text,
+                    "%Y-%m-%dT%H:%M"
+                )
+            except ValueError:
+                cur.close()
+                conn.close()
+                return "Invalid date/time."
+
+        cur.execute("""
+            UPDATE todos
+            SET
+                title = %s,
+                description = %s,
+                due_datetime = %s,
+                notified = 0
+            WHERE id = %s
+            AND username = %s
+        """, (
+            title,
+            description,
+            due_datetime,
+            todo_id,
+            username
+        ))
+
+        conn.commit()
+
+        cur.close()
+        conn.close()
+
+        return redirect("/todo")
+
+    cur.execute("""
+        SELECT *
+        FROM todos
+        WHERE id = %s
+        AND username = %s
+    """, (
+        todo_id,
+        username
+    ))
+
+    todo_item = cur.fetchone()
+
+    cur.close()
+    conn.close()
+
+    if not todo_item:
+        return "To-Do not found."
+
+    due_value = ""
+
+    if todo_item["due_datetime"]:
+
+        due_value = todo_item[
+            "due_datetime"
+        ].strftime(
+            "%Y-%m-%dT%H:%M"
+        )
+
+    return render_template_string(
+        """
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Edit To-Do</title>
+
+<style>
+
+body {
+    background: #0f1115;
+    color: white;
+    font-family: Arial, sans-serif;
+    padding: 25px;
+    margin: 0;
+}
+
+.container {
+    max-width: 600px;
+    margin: auto;
+}
+
+input,
+textarea {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0 20px;
+    background: #181c24;
+    color: white;
+    border: 1px solid #333;
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+
+textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+button {
+    padding: 12px 18px;
+    border: none;
+    border-radius: 8px;
+    background: #22c55e;
+    color: white;
+    cursor: pointer;
+}
+
+a {
+    color: white;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>✏️ Edit To-Do</h1>
+
+<form method="POST">
+
+<label>Task</label>
+
+<input
+    type="text"
+    name="title"
+    value="{{ todo_item.title }}"
+    required
+>
+
+<label>Description</label>
+
+<textarea
+    name="description"
+>{{ todo_item.description or "" }}</textarea>
+
+<label>Due Date & Time</label>
+
+<input
+    type="datetime-local"
+    name="due_datetime"
+    value="{{ due_value }}"
+>
+
+<button type="submit">
+💾 Save Changes
+</button>
+
+</form>
+
+<br>
+
+<a href="/todo">
+← Back to To-Do
+</a>
+
+</div>
+
+</body>
+
+</html>
+        """,
+        todo_item=todo_item,
+        due_value=due_value
+    )
+
+
+# =========================================================
+# TODO REMINDER API
+# =========================================================
+
+@app.route("/todo/reminders")
+def todo_reminders():
+
+    if "username" not in session:
+        return jsonify({"reminders": []})
+
+    username = session["username"]
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    # due_datetime is stored as a local India time entered by the user.
+    # Render/Postgres may use UTC internally, so compare against
+    # the current Asia/Kolkata local time.
+    cur.execute("""
+        SELECT
+            id,
+            title,
+            due_datetime
+        FROM todos
+        WHERE username = %s
+        AND completed = 0
+        AND notified = 0
+        AND due_datetime IS NOT NULL
+        AND due_datetime <= (
+            CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata'
+        )
+        ORDER BY due_datetime
+    """, (username,))
+
+    rows = cur.fetchall()
+
+    reminders = []
+
+    for row in rows:
+
+        reminders.append({
+            "id": row["id"],
+            "title": row["title"]
+        })
+
+        cur.execute("""
+            UPDATE todos
+            SET notified = 1
+            WHERE id = %s
+            AND username = %s
+        """, (
+            row["id"],
+            username
+        ))
+
+    conn.commit()
+
+    cur.close()
+    conn.close()
+
+    return jsonify({
+        "reminders": reminders
+    })
 
 
 # =========================================================
