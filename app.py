@@ -1675,6 +1675,76 @@ def pdfs():
 
 
 # =========================================================
+# OPEN / DOWNLOAD PDF THROUGH APP
+# =========================================================
+
+@app.route("/open_pdf/<int:id>")
+def open_pdf(id):
+
+    if "username" not in session:
+        return redirect("/login")
+
+    username = session["username"]
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT *
+        FROM pdf_files
+        WHERE id = %s
+        AND username = %s
+    """, (id, username))
+
+    pdf = cur.fetchone()
+
+    cur.close()
+    conn.close()
+
+    if not pdf:
+        return "PDF not found.", 404
+
+    if not pdf.get("storage_key"):
+        return redirect(pdf["filepath"])
+
+    try:
+        b2 = get_b2_client()
+
+        obj = b2.get_object(
+            Bucket=B2_BUCKET_NAME,
+            Key=pdf["storage_key"]
+        )
+
+        from flask import Response
+
+        def generate():
+            body = obj["Body"]
+            try:
+                while True:
+                    chunk = body.read(1024 * 1024)
+                    if not chunk:
+                        break
+                    yield chunk
+            finally:
+                body.close()
+
+        return Response(
+            generate(),
+            mimetype="application/pdf",
+            headers={
+                "Content-Disposition": f'inline; filename="{pdf["filename"]}"'
+            }
+        )
+
+    except Exception as e:
+        print("B2 PDF open error:", str(e))
+        return (
+            "PDF could not be opened right now. "
+            "Please try again."
+        ), 500
+
+
+# =========================================================
 # DELETE PDF
 # =========================================================
 
