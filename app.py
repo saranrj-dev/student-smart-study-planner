@@ -2096,7 +2096,7 @@ Enable vibration
     id="stopAlarmButton"
     class="delete-btn"
     onclick="stopAlarm()"
-    style="display:none;margin-left:5px;"
+    style="display:inline-block;margin-left:5px;"
 >
 ⏹️ Stop Alarm
 </button>
