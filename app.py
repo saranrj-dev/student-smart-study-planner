@@ -2489,6 +2489,8 @@ checkTodoReminders();
 
 </script>
 
+<script src="{{ url_for('static', filename='todo-reminder.js') }}"></script>
+
 </body>
 </html>
 """
