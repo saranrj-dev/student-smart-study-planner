@@ -3514,69 +3514,52 @@ async function enableNotifications() {
 }
 
 
-function playAlarm() {
+let alarmTimer = null;
+let vibrationTimer = null;
+let alarmAudioContext = null;
+let alarmActive = false;
 
+function playAlarmBeep() {
     try {
-
-        const AudioContext =
-            window.AudioContext ||
-            window.webkitAudioContext;
-
-        if (!AudioContext) {
-            return;
-        }
-
-        const audioContext = new AudioContext();
-
-        const oscillator =
-            audioContext.createOscillator();
-
-        const gain =
-            audioContext.createGain();
-
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        if (!alarmAudioContext) alarmAudioContext = new AudioContext();
+        if (alarmAudioContext.state === "suspended") alarmAudioContext.resume();
+        const oscillator = alarmAudioContext.createOscillator();
+        const gain = alarmAudioContext.createGain();
         oscillator.type = "sine";
         oscillator.frequency.value = 900;
         gain.gain.value = 0.25;
-
         oscillator.connect(gain);
-        gain.connect(audioContext.destination);
+        gain.connect(alarmAudioContext.destination);
         oscillator.start();
-
-        setTimeout(function() {
-
-            oscillator.stop();
-            audioContext.close();
-
-        }, 1000);
-
-    } catch (error) {
-
-        console.log("Alarm sound error:", error);
-
-    }
-
+        setTimeout(function() { try { oscillator.stop(); } catch (e) {} }, 700);
+    } catch (error) { console.log("Alarm sound error:", error); }
 }
-
 
 function vibratePhone() {
-
-    if (
-        vibrationEnabled &&
-        navigator.vibrate
-    ) {
-
-        navigator.vibrate([
-            500,
-            300,
-            500,
-            300,
-            800
-        ]);
-
-    }
-
+    if (vibrationEnabled && navigator.vibrate) navigator.vibrate([500, 300, 500, 300, 800]);
 }
 
+function startAlarm() {
+    if (alarmActive) return;
+    alarmActive = true;
+    const stopButton = document.getElementById("stopAlarmButton");
+    if (stopButton) stopButton.style.display = "inline-block";
+    playAlarmBeep();
+    vibratePhone();
+    alarmTimer = setInterval(playAlarmBeep, 1500);
+    vibrationTimer = setInterval(vibratePhone, 2000);
+}
+
+function stopAlarm() {
+    alarmActive = false;
+    if (alarmTimer) { clearInterval(alarmTimer); alarmTimer = null; }
+    if (vibrationTimer) { clearInterval(vibrationTimer); vibrationTimer = null; }
+    if (navigator.vibrate) navigator.vibrate(0);
+    const stopButton = document.getElementById("stopAlarmButton");
+    if (stopButton) stopButton.style.display = "none";
+}
 
 async function checkTodoReminders() {
 
@@ -3600,8 +3583,7 @@ async function checkTodoReminders() {
 
         for (const reminder of data.reminders) {
 
-            playAlarm();
-            vibratePhone();
+            startAlarm();
 
             if (
                 "Notification" in window &&
