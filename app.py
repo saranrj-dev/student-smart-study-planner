@@ -18,7 +18,8 @@ from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 
-app.secret_key = "student-study-planner-secret"
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "student-study-planner-secret")
+app.permanent_session_lifetime = timedelta(days=30)
 
 # Allow large uploads from browser
 app.config["MAX_CONTENT_LENGTH"] = 500 * 1024 * 1024
@@ -383,6 +384,7 @@ def login():
 
         if user:
 
+            session.permanent = True
             session["username"] = username
 
             return redirect("/dashboard")
@@ -460,6 +462,7 @@ def forgot_password():
 def logout():
 
     session.clear()
+    session.permanent = False
 
     return redirect("/")
 
