@@ -21,6 +21,13 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "student-study-planner-secret")
 app.permanent_session_lifetime = timedelta(days=30)
 
+# Keep login sessions stable in browsers and Android WebView.
+app.config["SESSION_COOKIE_NAME"] = "student_planner_session"
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SECURE"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_REFRESH_EACH_REQUEST"] = True
+
 # Allow large uploads from browser
 app.config["MAX_CONTENT_LENGTH"] = 500 * 1024 * 1024
 
@@ -351,6 +358,10 @@ def signup():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+
+    # Already logged in: skip the login page.
+    if request.method == "GET" and "username" in session:
+        return redirect("/dashboard")
 
     if request.method == "POST":
 
