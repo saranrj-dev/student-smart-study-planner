@@ -2107,6 +2107,49 @@ Keep this To-Do page open for browser reminders. Android native reminders can be
 
 </div>
 
+<!-- ALARM POPUP -->
+<div id="alarmModal" style="
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.75);
+    z-index:99999;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+">
+    <div style="
+        width:min(420px,100%);
+        background:#181c24;
+        border:2px solid #ef4444;
+        border-radius:18px;
+        padding:28px;
+        text-align:center;
+        box-shadow:0 20px 60px rgba(0,0,0,.6);
+        animation:alarmPulse .8s infinite alternate;
+    ">
+        <div style="font-size:55px;">⏰</div>
+        <h2 style="margin:10px 0;color:#fff;">To-Do Reminder</h2>
+        <p id="alarmTaskTitle" style="font-size:20px;font-weight:bold;margin:15px 0;color:#fbbf24;"></p>
+        <p style="color:#bbb;">Your task is due now!</p>
+        <button
+            type="button"
+            class="delete-btn"
+            onclick="stopAlarm()"
+            style="font-size:18px;padding:13px 25px;margin-top:10px;"
+        >
+            ⏹️ Stop Alarm
+        </button>
+    </div>
+</div>
+
+<style>
+@keyframes alarmPulse {
+    from { transform:scale(1); }
+    to { transform:scale(1.03); }
+}
+</style>
+
 <!-- TODO LIST -->
 <div class="card">
 
