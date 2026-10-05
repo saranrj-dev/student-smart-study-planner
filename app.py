@@ -3638,42 +3638,6 @@ checkTodoReminders();
 # TODO HOME
 # =========================================================
 
-@app.route("/todo")
-def todo():
-
-    if "username" not in session:
-        return redirect("/login")
-
-    username = session["username"]
-
-    conn = get_db()
-    cur = conn.cursor()
-
-    cur.execute("""
-        SELECT *
-        FROM todos
-        WHERE username = %s
-        ORDER BY
-            completed ASC,
-            due_datetime ASC NULLS LAST,
-            id DESC
-    """, (username,))
-
-    todos = cur.fetchall()
-
-    cur.close()
-    conn.close()
-
-    return render_template_string(
-        TODO_PAGE,
-        todos=todos
-    )
-
-
-# =========================================================
-# ADD TODO
-# =========================================================
-
 @app.route("/todo/add", methods=["POST"])
 def add_todo():
 
