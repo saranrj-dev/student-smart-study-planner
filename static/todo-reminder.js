@@ -6,36 +6,66 @@
     let vibrationTimer = null;
     let audioContext = null;
     let alarmActive = false;
+    const notified = new Set();
 
     const style = document.createElement("style");
     style.textContent = `
-        @keyframes todoAlarmPulse {
-            from { transform: scale(1); }
-            to { transform: scale(1.03); }
-        }
+        @keyframes todoAlarmPulse { from { transform:scale(1) } to { transform:scale(1.03) } }
         #globalTodoAlarmModal {
-            display:none;
-            position:fixed;
-            inset:0;
-            background:rgba(0,0,0,.78);
-            z-index:2147483647;
-            align-items:center;
-            justify-content:center;
-            padding:20px;
+            display:none; position:fixed; inset:0; background:rgba(0,0,0,.78);
+            z-index:2147483647; align-items:center; justify-content:center; padding:20px;
         }
         #globalTodoAlarmBox {
-            width:min(420px,100%);
-            background:#181c24;
-            color:white;
-            border:2px solid #ef4444;
-            border-radius:18px;
-            padding:28px;
-            text-align:center;
-            box-shadow:0 20px 60px rgba(0,0,0,.7);
-            animation:todoAlarmPulse .8s infinite alternate;
+            width:min(420px,100%); background:#181c24; color:white; border:2px solid #ef4444;
+            border-radius:18px; padding:28px; text-align:center;
+            box-shadow:0 20px 60px rgba(0,0,0,.7); animation:todoAlarmPulse .8s infinite alternate;
+        }
+        #todoNotificationEnable {
+            position:fixed; right:14px; bottom:14px; z-index:99999; border:0; border-radius:10px;
+            padding:12px 15px; background:#2563eb; color:white; font-weight:700;
+            box-shadow:0 4px 15px #0004;
         }
     `;
     document.head.appendChild(style);
+
+    const enableButton = document.createElement("button");
+    enableButton.id = "todoNotificationEnable";
+    enableButton.type = "button";
+    enableButton.textContent = "🔔 Enable reminders";
+    document.body.appendChild(enableButton);
+
+    function updateEnableButton() {
+        if (!("Notification" in window)) {
+            enableButton.textContent = "Notifications unsupported";
+            enableButton.disabled = true;
+        } else if (Notification.permission === "granted") {
+            enableButton.textContent = "🔔 Reminders enabled";
+            enableButton.disabled = true;
+        } else if (Notification.permission === "denied") {
+            enableButton.textContent = "Allow notifications in browser settings";
+        }
+    }
+
+    enableButton.addEventListener("click", async () => {
+        if (!("Notification" in window)) {
+            alert("This browser does not support notifications.");
+            return;
+        }
+        try {
+            const permission = await Notification.requestPermission();
+            updateEnableButton();
+            if (permission === "granted") {
+                new Notification("Study Planner reminders enabled", {
+                    body: "Keep this app allowed to send reminders."
+                });
+            } else {
+                alert("Notifications were not allowed. Enable them in your browser/app settings.");
+            }
+        } catch (e) {
+            console.error("Notification permission error:", e);
+        }
+    });
+    updateEnableButton();
 
     const modal = document.createElement("div");
     modal.id = "globalTodoAlarmModal";
@@ -49,8 +79,7 @@
                 style="background:#ef4444;color:white;border:0;border-radius:9px;padding:13px 25px;font-size:17px;cursor:pointer">
                 ⏹️ Stop Alarm
             </button>
-        </div>
-    `;
+        </div>`;
     document.body.appendChild(modal);
 
     function playBeep() {
@@ -67,13 +96,13 @@
             osc.connect(gain);
             gain.connect(audioContext.destination);
             osc.start();
-            setTimeout(() => { try { osc.stop(); } catch(e) {} }, 700);
-        } catch(e) {}
+            setTimeout(() => { try { osc.stop(); } catch (e) {} }, 700);
+        } catch (e) {}
     }
 
     function vibrate() {
         if (localStorage.getItem("todoVibration") !== "false" && navigator.vibrate) {
-            navigator.vibrate([500,300,500,300,800]);
+            navigator.vibrate([500, 300, 500, 300, 800]);
         }
     }
 
@@ -112,18 +141,29 @@
             if (!data.reminders || !data.reminders.length) return;
 
             for (const reminder of data.reminders) {
-                startAlarm(reminder.title);
+                const title = String(reminder.title || "Your task");
+                startAlarm(title);
 
-                if ("Notification" in window && Notification.permission === "granted") {
+                // Show one system notification per reminder title while this page is running.
+                // Browser notifications may appear while the app is in the background,
+                // provided permission is granted and the browser/WebView keeps the page alive.
+                const key = title + "|" + (reminder.id ?? reminder.due_at ?? "");
+                if ("Notification" in window && Notification.permission === "granted" && !notified.has(key)) {
+                    notified.add(key);
                     try {
-                        new Notification("⏰ To-Do Reminder", {
-                            body: reminder.title + " is due now!",
-                            requireInteraction: true
+                        const notification = new Notification("⏰ Study Planner Reminder", {
+                            body: title + " is due now!",
+                            requireInteraction: true,
+                            tag: "study-planner-" + key
                         });
-                    } catch(e) {}
+                        notification.onclick = () => {
+                            window.focus();
+                            notification.close();
+                        };
+                    } catch (e) {}
                 }
             }
-        } catch(e) {
+        } catch (e) {
             console.log("Global To-Do reminder check error:", e);
         }
     }
