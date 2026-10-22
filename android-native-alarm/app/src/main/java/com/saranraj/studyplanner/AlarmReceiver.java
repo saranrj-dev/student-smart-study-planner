@@ -40,7 +40,7 @@ public class AlarmReceiver extends BroadcastReceiver {
 
         Uri sound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
         Notification.Builder builder = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-            ? new Notification.Builder(context, "study_planner_alarms")
+            ? new Notification.Builder(context, "study_planner_alarms_v2")
             : new Notification.Builder(context);
         builder.setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
             .setContentTitle("⏰ Study Planner Reminder")
