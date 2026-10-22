@@ -82,12 +82,34 @@
         </div>`;
     document.body.appendChild(modal);
 
+    async function unlockAudio() {
+        try {
+            const AC = window.AudioContext || window.webkitAudioContext;
+            if (!AC) return;
+            if (!audioContext) audioContext = new AC();
+            if (audioContext.state === "suspended") await audioContext.resume();
+            // A silent short sound unlocks audio after the user's tap in mobile browsers/WebViews.
+            const gain = audioContext.createGain();
+            gain.gain.value = 0;
+            gain.connect(audioContext.destination);
+            const osc = audioContext.createOscillator();
+            osc.connect(gain);
+            osc.start();
+            osc.stop(audioContext.currentTime + 0.02);
+        } catch (e) {}
+    }
+
+    document.addEventListener("pointerdown", unlockAudio, { once: true });
+    document.addEventListener("touchstart", unlockAudio, { once: true, passive: true });
+
     function playBeep() {
         try {
             const AC = window.AudioContext || window.webkitAudioContext;
             if (!AC) return;
             if (!audioContext) audioContext = new AC();
-            if (audioContext.state === "suspended") audioContext.resume();
+            if (audioContext.state === "suspended") {
+                audioContext.resume().catch(() => {});
+            }
             const osc = audioContext.createOscillator();
             const gain = audioContext.createGain();
             osc.type = "sine";
@@ -167,6 +189,19 @@
             console.log("Global To-Do reminder check error:", e);
         }
     }
+
+    // Re-check immediately when the user returns to the app; mobile browsers throttle timers
+    // while backgrounded, so this catches reminders that became due while the page was hidden.
+    document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) {
+            if (audioContext && audioContext.state === "suspended") {
+                audioContext.resume().catch(() => {});
+            }
+            checkTodoReminders();
+        }
+    });
+    window.addEventListener("focus", checkTodoReminders);
+    window.addEventListener("pageshow", checkTodoReminders);
 
     checkTodoReminders();
     setInterval(checkTodoReminders, 10000);
