@@ -34,10 +34,19 @@
     enableButton.textContent = "🔔 Enable reminders";
     document.body.appendChild(enableButton);
 
+    function isAndroidWebView() {
+        const ua = navigator.userAgent || "";
+        return /;\\s*wv\\)|Version\\/\\d+\\.\\d+.*Chrome\\//i.test(ua) ||
+               (window.Android !== undefined && !("Notification" in window));
+    }
+
     function updateEnableButton() {
         if (!("Notification" in window)) {
-            enableButton.textContent = "Notifications unsupported";
-            enableButton.disabled = true;
+            enableButton.textContent = isAndroidWebView()
+                ? "🔔 Open in Chrome for alerts"
+                : "🔔 Browser alerts unavailable";
+            enableButton.disabled = false;
+            enableButton.title = "This browser does not expose system notifications.";
         } else if (Notification.permission === "granted") {
             enableButton.textContent = "🔔 Reminders enabled";
             enableButton.disabled = true;
@@ -48,7 +57,9 @@
 
     enableButton.addEventListener("click", async () => {
         if (!("Notification" in window)) {
-            alert("This browser does not support notifications.");
+            alert("System notifications are not supported in this app's built-in browser (WebView).\\n\\n" +
+                "Open the Study Planner website directly in Google Chrome, then tap Enable reminders and allow notifications.\\n\\n" +
+                "Important: a website-only alarm cannot reliably ring when the app/page is fully closed. A native Android alarm/notification feature is needed for that.");
             return;
         }
         try {
