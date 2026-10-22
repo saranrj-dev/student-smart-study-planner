@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Study Progress - Student Smart Study Planner</title>
+    <title>Edutrack | Study Progress</title>
 
     <link rel="stylesheet"
           href="{{ url_for('static', filename='style.css') }}">
@@ -38,7 +38,7 @@
         .overall-percentage {
             font-size: 45px;
             font-weight: bold;
-            color: #000000 !important;
+            color: #ffffff !important;
             margin: 10px 0;
         }
 
@@ -89,9 +89,17 @@
         }
 
         .completed-topic {
-            color: green !important;
+            color: #047857 !important;
             font-weight: bold;
         }
+        .subject-progress-item h3 { color: #312e81; margin-top: 0; }
+        .my-topic-item strong { color: #065f46; }
+        body.dark-mode .subject-progress-item h3,
+        body.dark-mode .my-topic-item strong { color: #d1fae5; }
+        .container > .card { border-radius: 18px; }
+        .container > .card > h2 { margin-top: 0; }
+        .topic-item .progress-fill { background: linear-gradient(90deg, #6366f1, #14b8a6); }
+        .my-topic-item button { background: #059669; color: white; }
 
         .add-topic-box {
             margin-bottom: 25px;
