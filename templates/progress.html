@@ -13,25 +13,26 @@
 
         /* Overall Progress */
         .overall-card {
-    background: white !important;
-    color: black !important;
+    background: linear-gradient(135deg, #312e81, #4f46e5 58%, #0f766e) !important;
+    color: #ffffff !important;
     text-align: center;
     padding: 25px;
-    border-radius: 15px;
+    border-radius: 18px;
     margin: 20px 0;
+    box-shadow: 0 12px 28px rgba(79,70,229,.18);
 }
 
 .overall-card h2,
 .overall-card h1,
 .overall-card p,
-.overall-card strong {
-    color: black !important;
+.overall-card strong,
+.overall-card .overall-percentage {
+    color: #ffffff !important;
 }
 
 .overall-percentage {
     font-size: 45px;
     font-weight: bold;
-    color: black !important;
 }
 
         .overall-percentage {
@@ -58,12 +59,33 @@
             transition: width 0.5s ease;
         }
 
-        /* Topics */
+        /* Subject-wise progress and My Topics get separate colored cards */
         .topic-item {
-            padding: 12px;
-            margin: 8px 0;
-            border-radius: 8px;
-            background: #f5f5f5;
+            padding: 14px;
+            margin: 10px 0;
+            border-radius: 12px;
+            background: #eef2ff;
+            border: 1px solid #c7d2fe;
+            color: #1e1b4b;
+        }
+        .subject-progress-item {
+            background: linear-gradient(135deg, #e0e7ff, #f5f3ff);
+            border-left: 5px solid #6366f1;
+        }
+        .my-topic-item {
+            background: linear-gradient(135deg, #dcfce7, #ecfeff);
+            border-left: 5px solid #10b981;
+            color: #064e3b;
+        }
+        .topic-item p { color: inherit; }
+        .topic-item form { margin-top: 10px; }
+        body.dark-mode .overall-card { background: linear-gradient(135deg, #312e81, #4338ca 58%, #115e59) !important; }
+        body.dark-mode .topic-item,
+        body.dark-mode .subject-progress-item,
+        body.dark-mode .my-topic-item {
+            background: #1e293b;
+            color: #e2e8f0;
+            border-color: #475569;
         }
 
         .completed-topic {
