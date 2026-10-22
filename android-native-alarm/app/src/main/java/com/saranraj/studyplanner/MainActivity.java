@@ -9,6 +9,8 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.media.AudioAttributes;
+import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -59,10 +61,18 @@ public class MainActivity extends Activity {
 
     private void createChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // v2 is intentional: Android locks sound settings for an existing notification channel.
+            Uri sound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+            AudioAttributes audio = new AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_ALARM)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build();
             NotificationChannel channel = new NotificationChannel(
-                "study_planner_alarms", "Study Planner Alarms", NotificationManager.IMPORTANCE_HIGH);
-            channel.setDescription("To-do due-time alarms");
+                "study_planner_alarms_v2", "Study Planner Alarms", NotificationManager.IMPORTANCE_HIGH);
+            channel.setDescription("Audible pop-up alarms for study tasks");
             channel.enableVibration(true);
+            channel.setVibrationPattern(new long[]{0, 700, 300, 700, 300, 1000});
+            channel.setSound(sound, audio);
             channel.setLockscreenVisibility(android.app.Notification.VISIBILITY_PUBLIC);
             getSystemService(NotificationManager.class).createNotificationChannel(channel);
         }
