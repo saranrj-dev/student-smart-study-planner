@@ -33,8 +33,9 @@ public class AlarmReceiver extends BroadcastReceiver {
         PendingIntent contentIntent = PendingIntent.getActivity(context, alarmId, open,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        Notification.Builder builder = new Notification.Builder(context,
-            simpleNotification ? "edutrack_reminders_v1" : "edutrack_alarm_v1");
+        Notification.Builder builder = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+            ? new Notification.Builder(context, simpleNotification ? "edutrack_reminders_v1" : "edutrack_alarm_v1")
+            : new Notification.Builder(context);
         builder.setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
             .setContentTitle(simpleNotification ? "Edutrack Reminder" : "Edutrack Task Alarm")
             .setContentText(title)
