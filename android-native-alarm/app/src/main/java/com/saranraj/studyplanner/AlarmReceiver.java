@@ -7,7 +7,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.media.RingtoneManager;
-import android.net.Uri;
 import android.os.Build;
 
 public class AlarmReceiver extends BroadcastReceiver {
@@ -19,8 +18,13 @@ public class AlarmReceiver extends BroadcastReceiver {
         if (ACTION_STOP.equals(intent.getAction())) {
             Intent stop = new Intent(context, AlarmService.class);
             stop.setAction(AlarmService.ACTION_STOP);
-            context.startService(stop);
+            try {
+                context.startService(stop);
+            } catch (Exception ignored) {
+                // If Android has already killed the service, dismiss visible alarm notification too.
+            }
             manager.cancel(alarmId);
+            manager.cancel(8801);
             return;
         }
 
