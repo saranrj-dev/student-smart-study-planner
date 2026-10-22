@@ -16,13 +16,9 @@ public class AlarmReceiver extends BroadcastReceiver {
         NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         int alarmId = intent.getIntExtra("alarm_id", 7001);
         if (ACTION_STOP.equals(intent.getAction())) {
-            Intent stop = new Intent(context, AlarmService.class);
-            stop.setAction(AlarmService.ACTION_STOP);
-            try {
-                context.startService(stop);
-            } catch (Exception ignored) {
-                // If Android has already killed the service, dismiss visible alarm notification too.
-            }
+            // stopService is allowed from a notification action and onDestroy stops the looping ringtone.
+            Intent service = new Intent(context, AlarmService.class);
+            context.stopService(service);
             manager.cancel(alarmId);
             manager.cancel(8801);
             return;
@@ -62,8 +58,9 @@ public class AlarmReceiver extends BroadcastReceiver {
             builder.setVibrate(new long[]{0,250,150,250});
         }
 
-        manager.notify(alarmId, builder.build());
-        if (!simpleNotification) {
+        if (simpleNotification) {
+            manager.notify(alarmId, builder.build());
+        } else {
             Intent start = new Intent(context, AlarmService.class);
             start.setAction(AlarmService.ACTION_START);
             start.putExtra("title", title);
