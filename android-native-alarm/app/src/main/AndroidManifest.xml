@@ -2,7 +2,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
-    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.VIBRATE" />\n    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />\n    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <application
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
         android:label="Edutrack" android:icon="@mipmap/ic_launcher"
