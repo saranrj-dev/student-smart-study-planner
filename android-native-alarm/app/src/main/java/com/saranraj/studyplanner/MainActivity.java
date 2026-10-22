@@ -2,6 +2,15 @@ package com.saranraj.studyplanner;
 
 import android.Manifest;
 import android.app.Activity;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.view.Gravity;
+import android.view.View;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.app.AlarmManager;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -30,13 +39,22 @@ import java.time.format.DateTimeFormatter;
 public class MainActivity extends Activity {
     private static final String SITE_URL = "https://student-smart-study-planner-2.onrender.com";
     private WebView webView;
+    private FrameLayout rootLayout;
+    private View splashView;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         createChannel();
         requestNotificationPermission();
+        rootLayout = new FrameLayout(this);
+        rootLayout.setBackgroundColor(Color.rgb(10, 18, 32));
         webView = new WebView(this);
-        setContentView(webView);
+        rootLayout.addView(webView, new FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        splashView = createSplashScreen();
+        rootLayout.addView(splashView, new FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        setContentView(rootLayout);
         webView.getSettings().setJavaScriptEnabled(true);
         webView.getSettings().setDomStorageEnabled(true);
         webView.setWebChromeClient(new WebChromeClient());
@@ -45,9 +63,72 @@ public class MainActivity extends Activity {
             @Override public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 injectReminderHooks(view);
+                if (splashView != null) {
+                    splashView.animate().alpha(0f).setDuration(300).withEndAction(() -> {
+                        if (rootLayout != null && splashView != null) rootLayout.removeView(splashView);
+                        splashView = null;
+                    }).start();
+                }
             }
         });
         webView.loadUrl(SITE_URL);
+    }
+
+
+    private View createSplashScreen() {
+        FrameLayout frame = new FrameLayout(this);
+        frame.setBackgroundColor(Color.rgb(10, 18, 32));
+
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setGravity(Gravity.CENTER);
+        content.setPadding(32, 32, 32, 32);
+
+        ImageView logo = new ImageView(this);
+        logo.setImageResource(com.saranraj.studyplanner.R.drawable.edutrack_logo);
+        LinearLayout.LayoutParams logoParams = new LinearLayout.LayoutParams(124, 124);
+        logoParams.bottomMargin = 24;
+        content.addView(logo, logoParams);
+
+        TextView name = new TextView(this);
+        name.setText("Edutrack");
+        name.setTextColor(Color.WHITE);
+        name.setTextSize(32);
+        name.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
+        name.setGravity(Gravity.CENTER);
+        content.addView(name);
+
+        TextView tagline = new TextView(this);
+        tagline.setText("Plan smarter. Learn better.");
+        tagline.setTextColor(Color.rgb(174, 190, 211));
+        tagline.setTextSize(15);
+        tagline.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams tagParams = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        tagParams.topMargin = 8;
+        content.addView(tagline, tagParams);
+
+        ProgressBar progress = new ProgressBar(this);
+        progress.setIndeterminate(true);
+        progress.setIndeterminateTintList(android.content.res.ColorStateList.valueOf(Color.rgb(54, 211, 153)));
+        LinearLayout.LayoutParams progressParams = new LinearLayout.LayoutParams(48, 48);
+        progressParams.topMargin = 32;
+        content.addView(progress, progressParams);
+
+        TextView loading = new TextView(this);
+        loading.setText("Preparing your study space…");
+        loading.setTextColor(Color.rgb(174, 190, 211));
+        loading.setTextSize(13);
+        loading.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams loadingParams = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        loadingParams.topMargin = 12;
+        content.addView(loading, loadingParams);
+
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT);
+        frame.addView(content, params);
+        return frame;
     }
 
     private void injectReminderHooks(WebView view) {
