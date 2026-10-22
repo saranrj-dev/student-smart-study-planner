@@ -38,7 +38,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
 public class MainActivity extends Activity {
-    private static final String SITE_URL = "https://student-smart-study-planner-2.onrender.com";
+    private static final String SITE_URL = "https://student-smart-study-planner-2.onrender.com/login";
     private WebView webView;
     private FrameLayout rootLayout;
     private View splashView;
