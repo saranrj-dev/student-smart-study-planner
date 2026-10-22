@@ -16,15 +16,23 @@ public class AlarmService extends Service {
     public static final String ACTION_STOP = "com.saranraj.studyplanner.ACTION_STOP_ALARM_SERVICE";
     private static final int FOREGROUND_ID = 8801;
     private Ringtone ringtone;
+    private boolean stopping = false;
 
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null && ACTION_STOP.equals(intent.getAction())) {
+            stopping = true;
             stopRingtone();
-            ((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).cancel(FOREGROUND_ID);
+            NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            if (manager != null) {
+                manager.cancel(FOREGROUND_ID);
+                manager.cancel(intent.getIntExtra("alarm_id", 7001));
+            }
             stopForeground(true);
             stopSelf();
             return START_NOT_STICKY;
         }
+
+        stopping = false;
         String title = intent == null ? "Study task reminder" : intent.getStringExtra("title");
         int alarmId = intent == null ? 7001 : intent.getIntExtra("alarm_id", 7001);
         Intent stop = new Intent(this, AlarmReceiver.class);
@@ -52,14 +60,23 @@ public class AlarmService extends Service {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) ringtone.setLooping(true);
             ringtone.play();
         }
-        return START_STICKY;
+        return START_NOT_STICKY;
     }
+
     private void stopRingtone() {
         if (ringtone != null) {
-            try { if (ringtone.isPlaying()) ringtone.stop(); } catch (Exception ignored) { }
+            try {
+                ringtone.stop();
+            } catch (Exception ignored) { }
             ringtone = null;
         }
     }
-    @Override public void onDestroy() { stopRingtone(); super.onDestroy(); }
+
+    @Override public void onDestroy() {
+        stopping = true;
+        stopRingtone();
+        super.onDestroy();
+    }
+
     @Override public IBinder onBind(Intent intent) { return null; }
 }
