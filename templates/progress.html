@@ -148,7 +148,43 @@
         body.dark-mode .container .card.my-topics-section p,
         body.dark-mode .container .card.my-topics-section strong { color: #e2e8f0 !important; }
 
-    </style>
+    
+/* FINAL FIX: keep text dark on the light progress cards */
+.container .subject-progress-section,
+.container .subject-progress-section * {
+    color: #111827 !important;
+}
+.container .my-topics-section,
+.container .my-topics-section * {
+    color: #111827 !important;
+}
+.container .subject-progress-section .progress-text,
+.container .my-topics-section .progress-text {
+    color: #111827 !important;
+}
+.container .subject-progress-section button,
+.container .my-topics-section button {
+    color: #ffffff !important;
+}
+.container .subject-progress-section input,
+.container .my-topics-section input,
+.container .subject-progress-section select,
+.container .my-topics-section select {
+    color: #111827 !important;
+    background-color: #ffffff !important;
+}
+body.dark-mode .container .subject-progress-section,
+body.dark-mode .container .subject-progress-section *,
+body.dark-mode .container .my-topics-section,
+body.dark-mode .container .my-topics-section * {
+    color: #f9fafb !important;
+}
+body.dark-mode .container .subject-progress-section button,
+body.dark-mode .container .my-topics-section button {
+    color: #ffffff !important;
+}
+
+</style>
 </head>
 
 <body>
