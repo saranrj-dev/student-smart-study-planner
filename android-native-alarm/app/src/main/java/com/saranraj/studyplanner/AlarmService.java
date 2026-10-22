@@ -32,7 +32,10 @@ public class AlarmService extends Service {
         stop.putExtra("alarm_id", alarmId);
         PendingIntent stopIntent = PendingIntent.getBroadcast(this, alarmId, stop,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        Notification notification = new Notification.Builder(this, "edutrack_alarm_v1")
+        Notification.Builder builder = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+            ? new Notification.Builder(this, "edutrack_alarm_v1")
+            : new Notification.Builder(this);
+        Notification notification = builder
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
             .setContentTitle("Edutrack Task Alarm")
             .setContentText(title == null ? "Task due now" : title)
