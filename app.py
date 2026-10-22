@@ -293,7 +293,9 @@ init_db()
 @app.route("/")
 def home():
 
-    return render_template("index.html")
+    if "username" in session:
+        return redirect("/dashboard")
+    return redirect("/login")
 
 
 # =========================================================
