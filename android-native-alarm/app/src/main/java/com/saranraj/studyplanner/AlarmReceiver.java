@@ -7,10 +7,12 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.media.RingtoneManager;
+import android.media.Ringtone;
 import android.net.Uri;
 import android.os.Build;
 
 public class AlarmReceiver extends BroadcastReceiver {
+    private static Ringtone activeRingtone;
     public static final String ACTION_STOP = "com.saranraj.studyplanner.ACTION_STOP_ALARM";
 
     @Override public void onReceive(Context context, Intent intent) {
@@ -20,6 +22,10 @@ public class AlarmReceiver extends BroadcastReceiver {
 
         // The notification's Stop Alarm action dismisses the alarm notification/sound.
         if (ACTION_STOP.equals(intent.getAction())) {
+            if (activeRingtone != null) {
+                try { if (activeRingtone.isPlaying()) activeRingtone.stop(); } catch (Exception ignored) { }
+                activeRingtone = null;
+            }
             manager.cancel(alarmId);
             return;
         }
@@ -56,6 +62,17 @@ public class AlarmReceiver extends BroadcastReceiver {
             builder.setSound(sound);
             builder.setVibrate(new long[]{0, 700, 300, 700, 300, 1000});
         }
+        // Loop the alarm ringtone until Stop Alarm is tapped.
+        if (activeRingtone != null) {
+            try { if (activeRingtone.isPlaying()) activeRingtone.stop(); } catch (Exception ignored) { }
+        }
+        activeRingtone = RingtoneManager.getRingtone(context, sound);
+        if (activeRingtone != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) activeRingtone.setLooping(true);
+            activeRingtone.play();
+        }
+        // Prevent notification sound from playing a second time.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) builder.setSound(null);
         manager.notify(alarmId, builder.build());
     }
 }
