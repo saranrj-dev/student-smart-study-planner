@@ -113,6 +113,41 @@
             border-radius: 6px;
         }
 
+    
+        /* Color the complete sections, not only individual topic rows */
+        .container .card.subject-progress-section {
+            background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%) !important;
+            color: #1e1b4b !important;
+            border: 1px solid #c7d2fe;
+            border-top: 5px solid #6366f1;
+        }
+        .container .card.my-topics-section {
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%) !important;
+            color: #064e3b !important;
+            border: 1px solid #a7f3d0;
+            border-top: 5px solid #10b981;
+        }
+        .container .card.subject-progress-section h2,
+        .container .card.subject-progress-section p,
+        .container .card.subject-progress-section h3,
+        .container .card.subject-progress-section strong { color: #312e81 !important; }
+        .container .card.my-topics-section h2,
+        .container .card.my-topics-section p,
+        .container .card.my-topics-section strong { color: #065f46 !important; }
+        body.dark-mode .container .card.subject-progress-section,
+        body.dark-mode .container .card.my-topics-section {
+            background: #172033 !important;
+            color: #f1f5f9 !important;
+            border-color: #475569;
+        }
+        body.dark-mode .container .card.subject-progress-section h2,
+        body.dark-mode .container .card.subject-progress-section p,
+        body.dark-mode .container .card.subject-progress-section h3,
+        body.dark-mode .container .card.subject-progress-section strong,
+        body.dark-mode .container .card.my-topics-section h2,
+        body.dark-mode .container .card.my-topics-section p,
+        body.dark-mode .container .card.my-topics-section strong { color: #e2e8f0 !important; }
+
     </style>
 </head>
 
@@ -209,7 +244,7 @@
 
 
         <!-- SUBJECT-WISE PROGRESS -->
-        <div class="card">
+        <div class="card subject-progress-section">
 
             <h2>📚 Subject-wise Progress</h2>
 
@@ -256,7 +291,7 @@
 
 
         <!-- MY TOPICS -->
-        <div class="card">
+        <div class="card my-topics-section">
 
             <h2>📝 My Topics</h2>
 
