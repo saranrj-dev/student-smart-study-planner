@@ -29,6 +29,7 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
+import android.os.Handler;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -41,6 +42,7 @@ public class MainActivity extends Activity {
     private WebView webView;
     private FrameLayout rootLayout;
     private View splashView;
+    private final Handler splashHandler = new Handler();
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -63,12 +65,22 @@ public class MainActivity extends Activity {
             @Override public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 injectReminderHooks(view);
-                if (splashView != null) {
-                    splashView.animate().alpha(0f).setDuration(300).withEndAction(() -> {
-                        if (rootLayout != null && splashView != null) rootLayout.removeView(splashView);
-                        splashView = null;
-                    }).start();
-                }
+                // Keep the native Edutrack splash visible while Render's sleeping service wakes up.
+                view.evaluateJavascript(
+                    "(function(){var t=((document.title||'')+' '+(document.body?document.body.innerText:'')).toLowerCase();return (t.includes('application loading')||t.includes('service waking up')||t.includes('start building on render')||t.includes('steady hands. clean logs'));})()",
+                    value -> {
+                        boolean renderWakeScreen = "true".equals(value);
+                        if (renderWakeScreen) {
+                            splashHandler.postDelayed(() -> {
+                                if (webView != null && splashView != null) webView.reload();
+                            }, 4500);
+                        } else if (splashView != null) {
+                            splashView.animate().alpha(0f).setDuration(300).withEndAction(() -> {
+                                if (rootLayout != null && splashView != null) rootLayout.removeView(splashView);
+                                splashView = null;
+                            }).start();
+                        }
+                    });
             }
         });
         webView.loadUrl(SITE_URL);
