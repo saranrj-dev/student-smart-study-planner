@@ -2303,43 +2303,41 @@ vibrationToggle.addEventListener("change", function() {
 
 
 async function enableNotifications() {
-
+    // Some Android in-app browsers/WebViews expose Notification but reject
+    // requestPermission(). Handle that case with useful next steps.
     if (!("Notification" in window)) {
-
-        alert("This browser does not support notifications.");
+        alert("This browser does not support system notifications. Open this website directly in Google Chrome.");
         return;
-
     }
 
     try {
-
-        const permission =
-            await Notification.requestPermission();
-
-        if (permission === "granted") {
-
-            alert("Notifications enabled successfully!");
-
-            new Notification(
-                "Student Smart Study Planner",
-                {
-                    body: "Reminder notifications are enabled."
-                }
-            );
-
-        } else {
-
-            alert("Notification permission denied.");
-
+        if (Notification.permission === "granted") {
+            new Notification("Student Smart Study Planner", {
+                body: "Reminder notifications are enabled."
+            });
+            alert("Notifications are already enabled.");
+            return;
         }
 
+        if (Notification.permission === "denied") {
+            alert("Notifications are blocked for this website. In Chrome, open Site settings → Notifications → Allow, then reload the page.");
+            return;
+        }
+
+        const permission = await Notification.requestPermission();
+
+        if (permission === "granted") {
+            new Notification("Student Smart Study Planner", {
+                body: "Reminder notifications are enabled."
+            });
+            alert("Notifications enabled successfully!");
+        } else {
+            alert("Permission was not granted. Open Chrome Site settings → Notifications and allow this website.");
+        }
     } catch (error) {
-
-        console.log("Notification permission error:", error);
-        alert("Could not enable notifications in this browser.");
-
+        console.error("Notification permission error:", error);
+        alert("This browser/app does not allow website notifications. Open the site directly in Google Chrome. If it still fails, this app needs native Android notifications.");
     }
-
 }
 
 
@@ -3533,43 +3531,41 @@ vibrationToggle.addEventListener("change", function() {
 
 
 async function enableNotifications() {
-
+    // Some Android in-app browsers/WebViews expose Notification but reject
+    // requestPermission(). Handle that case with useful next steps.
     if (!("Notification" in window)) {
-
-        alert("This browser does not support notifications.");
+        alert("This browser does not support system notifications. Open this website directly in Google Chrome.");
         return;
-
     }
 
     try {
-
-        const permission =
-            await Notification.requestPermission();
-
-        if (permission === "granted") {
-
-            alert("Notifications enabled successfully!");
-
-            new Notification(
-                "Student Smart Study Planner",
-                {
-                    body: "Reminder notifications are enabled."
-                }
-            );
-
-        } else {
-
-            alert("Notification permission denied.");
-
+        if (Notification.permission === "granted") {
+            new Notification("Student Smart Study Planner", {
+                body: "Reminder notifications are enabled."
+            });
+            alert("Notifications are already enabled.");
+            return;
         }
 
+        if (Notification.permission === "denied") {
+            alert("Notifications are blocked for this website. In Chrome, open Site settings → Notifications → Allow, then reload the page.");
+            return;
+        }
+
+        const permission = await Notification.requestPermission();
+
+        if (permission === "granted") {
+            new Notification("Student Smart Study Planner", {
+                body: "Reminder notifications are enabled."
+            });
+            alert("Notifications enabled successfully!");
+        } else {
+            alert("Permission was not granted. Open Chrome Site settings → Notifications and allow this website.");
+        }
     } catch (error) {
-
-        console.log("Notification permission error:", error);
-        alert("Could not enable notifications in this browser.");
-
+        console.error("Notification permission error:", error);
+        alert("This browser/app does not allow website notifications. Open the site directly in Google Chrome. If it still fails, this app needs native Android notifications.");
     }
-
 }
 
 
