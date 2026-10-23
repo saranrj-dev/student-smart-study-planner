@@ -35,10 +35,12 @@ public class AlarmService extends Service {
         stopping = false;
         String title = intent == null ? "Study task reminder" : intent.getStringExtra("title");
         int alarmId = intent == null ? 7001 : intent.getIntExtra("alarm_id", 7001);
-        Intent stop = new Intent(this, AlarmReceiver.class);
-        stop.setAction(AlarmReceiver.ACTION_STOP);
+        // Send STOP directly to the running foreground service so it can stop the
+        // looping ringtone and remove its own foreground notification immediately.
+        Intent stop = new Intent(this, AlarmService.class);
+        stop.setAction(ACTION_STOP);
         stop.putExtra("alarm_id", alarmId);
-        PendingIntent stopIntent = PendingIntent.getBroadcast(this, alarmId, stop,
+        PendingIntent stopIntent = PendingIntent.getService(this, alarmId, stop,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         Notification.Builder builder = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
             ? new Notification.Builder(this, "edutrack_alarm_v1")
